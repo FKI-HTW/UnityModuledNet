@@ -20,8 +20,6 @@ MonoBehaviour:
   ClientTimeoutDelay: 3000
   ResendReliablePacketsDelay: 250
   MaxNumberResendReliablePackets: 5
+  ClientVisualiserDelay: 500
   Port: 26822
-  ClientVisualiserDelay: 50
-  GLTFHierarchyDelay: 500
-  ClientVisualiser: {fileID: 7080547937376749528, guid: 50aa1bbdf9c3eac459c8e97ce858b662, type: 3}
-  HighlightMaterial: {fileID: 2100000, guid: 34734aadb01022e4c858284cc356e1b4, type: 2}
+  ClientVisualiser: {fileID: 6106676318061003659, guid: 50aa1bbdf9c3eac459c8e97ce858b662, type: 3}
