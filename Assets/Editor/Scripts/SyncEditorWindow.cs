@@ -30,10 +30,10 @@ namespace CENTIS.UnityModuledNet.SceneSync
 
         #endregion
 
-        [MenuItem("Window/Unity Sync/Scene Sync Manager")]
+        [MenuItem("Window/UnityModuledSync/Sync Manager")]
         public static void ShowWindow()
         {
-            GetWindow(typeof(SyncEditorWindow), false, "Scene Sync Manager");
+            GetWindow(typeof(SyncEditorWindow), false, "Sync Manager");
         }
 
 		public void OnEnable()
@@ -206,6 +206,9 @@ namespace CENTIS.UnityModuledNet.SceneSync
 
         private GUIStyle GetScrollviewRowStyle(Color color)
         {
+            if (!_texture)
+                _texture = new(1, 1);
+
             _texture.SetPixel(0, 0, color);
             _texture.Apply();
             GUIStyle style = new();
