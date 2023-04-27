@@ -1,0 +1,22 @@
+{
+  "name": "de.htw-berlin.centis.unity-moduled-net",
+  "version": "0.1.0",
+  "displayName": "Unity Moduled Net",
+  "description": "Unity Moduled Networking Package",
+  "unity": "2021.3",
+  "documentationUrl": "https://github.com/CENTIS-HTW/UnityModuledNet/Assets/UnityModuledNet/README.html",
+  "changelogUrl": "https://github.com/CENTIS-HTW/UnityModuledNet/Assets/UnityModuledNet/CHANGELOG.html",
+  "keywords": [
+    "Networking",
+    "Modules"
+  ],
+  "samples": [
+    {
+      "displayName": "Visualiser Module",
+      "description": "Visualises editor and build position of client.",
+      "path": "Modules~/VisualiserModule"
+    }
+  ],
+  "dependencies": {
+  }
+}
