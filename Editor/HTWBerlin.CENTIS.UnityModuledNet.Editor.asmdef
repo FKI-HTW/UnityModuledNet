@@ -1,0 +1,16 @@
+{
+    "name": "HTWBerlin.CENTIS.UnityModuledNet.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:40c782a4829b06648a3e21d08a8118e7"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
