@@ -6,9 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Runtime/Scenes/Test.unity
+    path: Assets/UnityModuledNet/Runtime/Scenes/Test.unity
     guid: ef00e41c54f127f4fa7b21ce67e9ada9
   - enabled: 0
-    path: Assets/Runtime/Scenes/ExportScene.unity
+    path: Assets/UnityModuledNet/Runtime/Scenes/ExportScene.unity
     guid: b3f3315d4d0246743adc88205599aada
   m_configObjects: {}
