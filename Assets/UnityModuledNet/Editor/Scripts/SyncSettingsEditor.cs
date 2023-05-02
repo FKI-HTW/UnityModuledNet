@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEditor;
-using CENTIS.UnityModuledNet.Modules;
 
 namespace CENTIS.UnityModuledNet
 {
@@ -35,14 +34,6 @@ namespace CENTIS.UnityModuledNet
 				_settings.ClientTimeoutDelay = EditorGUILayout.IntField("Client Timeout Delay:", _settings.ClientTimeoutDelay);
 				_settings.ResendReliablePacketsDelay = EditorGUILayout.IntField("Resend Reliable Packets Delay: ", _settings.ResendReliablePacketsDelay);
 				_settings.MaxNumberResendReliablePackets = EditorGUILayout.IntField("Number of Resends of Reliable Packets: ", _settings.MaxNumberResendReliablePackets);
-				EditorGUI.indentLevel--;
-			}
-
-			_additionalSettingsIsVisible = EditorGUILayout.Foldout(_additionalSettingsIsVisible, "Additional Settings", EditorStyles.foldoutHeader);
-			if (_additionalSettingsIsVisible)
-			{
-				EditorGUI.indentLevel++;
-				_settings.ClientVisualiser = (SyncClientVisualiser)EditorGUILayout.ObjectField("Client Visualiser Prefab:", _settings.ClientVisualiser, typeof(SyncClientVisualiser), false);
 				EditorGUI.indentLevel--;
 			}
 

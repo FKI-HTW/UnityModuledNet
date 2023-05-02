@@ -9,9 +9,9 @@ using UnityEditor;
 
 namespace CENTIS.UnityModuledNet.Modules
 {
-    public class ClientVisualiserModule : SyncUnreliableModule
+    public class SyncClientVisualiserModule : SyncUnreliableModule
     {
-		private static readonly SyncSettings _settings = SyncManager.GetSyncSettings();
+		private static readonly SyncClientVisualiserSettings _settings;
 
 		private readonly Dictionary<SyncConnectedClient, SyncClientVisualiser> _visualisers = new();
 
@@ -23,7 +23,7 @@ namespace CENTIS.UnityModuledNet.Modules
 
 		#region lifecycle
 
-		public ClientVisualiserModule()
+		public SyncClientVisualiserModule()
 		{
 			SyncManager.OnClientDisconnected += RemoveConnectedClient;
 
