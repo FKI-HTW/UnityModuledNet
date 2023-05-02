@@ -1,6 +1,5 @@
 using System.IO;
 using UnityEngine;
-using CENTIS.UnityModuledNet.Modules;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine.SceneManagement;
@@ -64,13 +63,9 @@ namespace CENTIS.UnityModuledNet
         public int ClientTimeoutDelay = 3000;
 		public int ResendReliablePacketsDelay = 250;
 		public int MaxNumberResendReliablePackets = 5;
-		public int ClientVisualiserDelay = 500;
 
 		// debug settings
 		public int Port = 26822;
-
-		// additional settings
-		public SyncClientVisualiser ClientVisualiser;
 	}
 
 #if UNITY_EDITOR && UNITY_IMGUI

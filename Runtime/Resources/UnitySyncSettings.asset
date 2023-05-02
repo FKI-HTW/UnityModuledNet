@@ -20,6 +20,4 @@ MonoBehaviour:
   ClientTimeoutDelay: 3000
   ResendReliablePacketsDelay: 250
   MaxNumberResendReliablePackets: 5
-  ClientVisualiserDelay: 500
   Port: 26822
-  ClientVisualiser: {fileID: 6106676318061003659, guid: 50aa1bbdf9c3eac459c8e97ce858b662, type: 3}
