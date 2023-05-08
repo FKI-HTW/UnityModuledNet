@@ -2,8 +2,6 @@ using System.IO;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine.SceneManagement;
-using System.Collections.Generic;
 #endif
 
 namespace CENTIS.UnityModuledNet
@@ -15,46 +13,48 @@ namespace CENTIS.UnityModuledNet
 		private const string _settingsPath = "Assets/Resources/" + _fileName;
 
 		internal static SyncSettings cachedSettings;
-		public static SyncSettings GetOrCreateSettings()
-		{
-			if (cachedSettings)
-				return cachedSettings;
+        public static SyncSettings GetOrCreateSettings()
+        {
+            return cachedSettings ?? (cachedSettings = GetOrCreateSettings<SyncSettings>(_fileName, _settingsPath));
+        }
 
-			SyncSettings settings = Resources.Load<SyncSettings>(Path.GetFileNameWithoutExtension(_fileName));
+        public static T GetOrCreateSettings<T>(string fileName, string path = _settingsPath) where T : ScriptableObject
+
+        {
+            T settings = Resources.Load<T>(Path.GetFileNameWithoutExtension(fileName));
 
 #if UNITY_EDITOR
-			if (!settings)
-			{
-				settings = AssetDatabase.LoadAssetAtPath<SyncSettings>(_settingsPath);
-			}
-			if (!settings)
-			{
-				string[] allSettings = AssetDatabase.FindAssets("t:SyncSettings");
-				if (allSettings.Length > 0)
-				{
-					settings = AssetDatabase.LoadAssetAtPath<SyncSettings>(AssetDatabase.GUIDToAssetPath(allSettings[0]));
-				}
-			}
-			if (!settings)
-			{
-				settings = CreateInstance<SyncSettings>();
-				string dir = Path.GetDirectoryName(_settingsPath);
-				if (!Directory.Exists(dir))
-					Directory.CreateDirectory(dir);
-				AssetDatabase.CreateAsset(settings, _settingsPath);
-				AssetDatabase.SaveAssets();
-			}
+            if (!settings)
+            {
+                settings = AssetDatabase.LoadAssetAtPath<T>(path);
+            }
+            if (!settings)
+            {
+                string[] allSettings = AssetDatabase.FindAssets("t:SyncSettings");
+                if (allSettings.Length > 0)
+                {
+                    settings = AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(allSettings[0]));
+                }
+            }
+            if (!settings)
+            {
+                settings = CreateInstance<T>();
+                string dir = Path.GetDirectoryName(path);
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                AssetDatabase.CreateAsset(settings, path);
+                AssetDatabase.SaveAssets();
+            }
 #else
 			if (!settings)
 			{
 				settings = ScriptableObject.CreateInstance<SyncSettings>();
 			}
 #endif
-			cachedSettings = settings;
-			return cachedSettings;
-		}
+            return settings;
+        }
 
-		// user settings
+        // user settings
         public string Username = "Username";
         public Color32 Color = new(255, 255, 255, 255);
         
