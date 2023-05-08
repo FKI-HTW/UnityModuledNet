@@ -6,6 +6,8 @@
   "unity": "2021.3",
   "documentationUrl": "https://github.com/CENTIS-HTW/UnityModuledNet/Assets/UnityModuledNet/README.html",
   "changelogUrl": "https://github.com/CENTIS-HTW/UnityModuledNet/Assets/UnityModuledNet/CHANGELOG.html",
+  "dependencies": {
+  },
   "keywords": [
     "Networking",
     "Modules"
@@ -17,6 +19,9 @@
       "path": "Modules~/VisualiserModule"
     }
   ],
-  "dependencies": {
+  "author": {
+    "name": "CENTIS HTW-Berlin",
+    "email": "centis-htw-bounces@lists.htw-berlin.de",
+    "url": "https://fki.htw-berlin.de/centis/"
   }
 }
