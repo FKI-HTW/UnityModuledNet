@@ -11,13 +11,13 @@ namespace CENTIS.UnityModuledNet.SceneSync
         #region private members
 
         private static SyncSettings _settings;
-        private Editor _syncSettingsEditor;
+        private Editor _settingsEditor;
 
         private Vector2 _roomsViewPos;
         private Vector2 _clientsViewPos;
         private Vector2 _messagesViewPos;
         private Color[] _scrollViewColors = new Color[] { new(0.25f, 0.25f, 0.25f), new(0.23f, 0.23f, 0.23f) };
-        
+
         private bool _isAutoscroll = false;
         private bool _newRoomOptionsIsVisible = true;
         private string _newRoomName = "New Room";
@@ -30,26 +30,26 @@ namespace CENTIS.UnityModuledNet.SceneSync
 
         #endregion
 
-        [MenuItem("Window/UnityModuledSync/Sync Manager")]
+        [MenuItem("Window/UnityModuledSync/Settings")]
         public static void ShowWindow()
         {
-            GetWindow(typeof(SyncEditorWindow), false, "Sync Manager");
+            GetWindow(typeof(SyncEditorWindow), false, "Moduled Net Settings");
         }
 
-		public void OnEnable()
-		{
+        public void OnEnable()
+        {
             _texture = new(1, 1);
             _settings = SyncSettings.GetOrCreateSettings();
-            _syncSettingsEditor = Editor.CreateEditor(_settings);
+            _settingsEditor = Editor.CreateEditor(_settings);
             SyncManager.OnSyncMessageAdded += AddSyncMessage;
-		}
+        }
 
-		public void CreateGUI()
-		{
+        public void CreateGUI()
+        {
         }
 
         private void OnDestroy()
-		{
+        {
             SyncManager.OnSyncMessageAdded -= AddSyncMessage;
         }
 
@@ -57,30 +57,47 @@ namespace CENTIS.UnityModuledNet.SceneSync
         void OnGUI()
         {
             EditorGUILayout.BeginVertical(EditorStyles.inspectorDefaultMargins);
-			{
-                GUILayout.Label("UnitySync", EditorStyles.largeLabel);
+            {
+                GUILayout.Label("UnityModuledNet", EditorStyles.largeLabel);
 
                 // user settings
-                _syncSettingsEditor.OnInspectorGUI();
+                _settingsEditor.OnInspectorGUI();
+
+                // module settings
+                if (_settings.ModuleSettings.Count > 0)
+                {
+                    EditorGUILayout.Space();
+                    EditorGUILayout.Space();
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    GUILayout.Label("Module settings", EditorStyles.boldLabel);
+                    foreach (var moduleSettings in _settings.ModuleSettings)
+                    {
+                        moduleSettings.DrawModuleSettingsFoldout();
+                    }
+                    EditorGUILayout.EndVertical();
+                }
+
                 EditorGUILayout.Space();
                 EditorGUILayout.Space();
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                GUILayout.Label("Connection", EditorStyles.boldLabel);
 
                 if (!SyncManager.IsClientActive)
-				{
+                {
                     GUILayout.Label($"Client has stopped working!");
                     if (GUILayout.Button(new GUIContent("Reset Client"), GUILayout.ExpandWidth(false)))
-					{
+                    {
                         SyncManager.ResetClient();
                         Repaint();
-					}
-				}
+                    }
+                }
                 else
-				{
+                {
                     if (GUILayout.Button("Reset Client"))
-					{
+                    {
                         SyncManager.ResetClient();
                         Repaint();
-					}
+                    }
 
                     if (!SyncManager.IsConnectedToRoom)
                     {
@@ -161,18 +178,20 @@ namespace CENTIS.UnityModuledNet.SceneSync
                             SyncManager.DisconnectFromRoom();
                     }
                 }
+                EditorGUILayout.EndVertical();
+
                 EditorGUILayout.Space();
                 EditorGUILayout.Space();
 
                 // sync messages
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label($"Sync Messages:");
+                GUILayout.Label($"Sync Messages:", EditorStyles.boldLabel);
                 GUILayout.FlexibleSpace();
                 _isAutoscroll = EditorGUILayout.Toggle(new GUIContent(" ", "Is Autoscrolling Messages"), _isAutoscroll);
                 EditorGUILayout.EndHorizontal();
                 _messagesViewPos = EditorGUILayout.BeginScrollView(_messagesViewPos,
                     EditorStyles.helpBox, GUILayout.ExpandWidth(true), GUILayout.MaxHeight(200));
-				{
+                {
                     Color defaultColor = _style.normal.textColor;
                     for (int i = 0; i < SyncManager.SyncMessages.Count; i++)
                     {
@@ -180,7 +199,7 @@ namespace CENTIS.UnityModuledNet.SceneSync
                         EditorGUILayout.BeginHorizontal(GetScrollviewRowStyle(_scrollViewColors[i % 2]));
                         {
                             switch (message.Severity)
-							{
+                            {
                                 case SyncMessageSeverity.Log:
                                     _style.normal.textColor = Color.white;
                                     break;
@@ -190,7 +209,7 @@ namespace CENTIS.UnityModuledNet.SceneSync
                                 case SyncMessageSeverity.LogError:
                                     _style.normal.textColor = Color.red;
                                     break;
-							}
+                            }
                             GUILayout.Label($"[{message.Timestamp:H:mm:ss}]  {message.Message}", _style);
                         }
                         EditorGUILayout.EndHorizontal();
@@ -218,8 +237,8 @@ namespace CENTIS.UnityModuledNet.SceneSync
         }
 
         private void AddSyncMessage()
-		{
-            if (_isAutoscroll) 
+        {
+            if (_isAutoscroll)
                 _messagesViewPos = new(_messagesViewPos.x, SyncManager.SyncMessages.Count * ROW_HEIGHT);
             Repaint();
         }
