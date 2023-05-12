@@ -129,16 +129,16 @@ namespace CENTIS.UnityModuledNet.Networking
 				{
 					case SocketException:
 						Debug.LogError("An Error ocurred when accessing the socket. "
-							+ "Make sure the port is not occupied by another process!");
+							+ "Make sure the port is not occupied by another process!", _settings);
 						break;
 					case ArgumentOutOfRangeException:
-						Debug.LogError("The Given Port is outside the possible Range!");
+						Debug.LogError("The Given Port is outside the possible Range!", _settings);
 						break;
 					case ArgumentNullException:
-						Debug.LogError("The local IP can't be null!");
+						Debug.LogError("The local IP can't be null!", _settings);
 						break;
 					case FormatException:
-						Debug.LogError("The local IP is not a valid IP Address!");
+						Debug.LogError("The local IP is not a valid IP Address!", _settings);
 						break;
 					case ThreadStartException:
 						Debug.LogError("An Error ocurred when starting the Threads. Please try again later!");
