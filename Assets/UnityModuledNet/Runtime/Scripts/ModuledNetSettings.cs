@@ -32,7 +32,7 @@ namespace CENTIS.UnityModuledNet
             get => _maxNumberClients;
             set
             {
-                if (value < 253 && value > 1)
+                if (value < 254 && value > 1)
                     _maxNumberClients = value;
             }
         }
