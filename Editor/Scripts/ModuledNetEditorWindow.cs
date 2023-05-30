@@ -63,6 +63,21 @@ namespace CENTIS.UnityModuledNet.SceneSync
 
                 // user settings
                 _syncSettingsEditor.OnInspectorGUI();
+
+                // module settings
+                if (_settings.ModuleSettings.Count > 0)
+                {
+                    EditorGUILayout.Space();
+                    EditorGUILayout.Space();
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    GUILayout.Label("Module settings", EditorStyles.boldLabel);
+                    foreach (var moduleSettings in _settings.ModuleSettings)
+                    {
+                        moduleSettings.DrawModuleSettingsFoldout();
+                    }
+                    EditorGUILayout.EndVertical();
+                }
+
                 EditorGUILayout.Space();
                 EditorGUILayout.Space();
 
