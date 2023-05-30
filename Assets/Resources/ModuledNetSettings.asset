@@ -10,14 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90dc93faf28b855489153caae4d54fb8, type: 3}
-  m_Name: SyncSettings
+  m_Name: ModuledNetSettings
   m_EditorClassIdentifier: 
   Username: Username
   Color:
     serializedVersion: 2
     rgba: 4294967295
-  HeartbeatDelay: 1000
-  ClientTimeoutDelay: 3000
-  ResendReliablePacketsDelay: 250
+  ServerConnectionTimeout: 5000
+  ServerHeartbeatDelay: 1000
+  ServerDiscoveryTimeout: 4000
   MaxNumberResendReliablePackets: 5
   Port: 26822
+  DiscoveryPort: 26823
