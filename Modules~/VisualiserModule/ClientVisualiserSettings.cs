@@ -10,7 +10,7 @@ namespace CENTIS.UnityModuledNet.Modules
     {
         public static ClientVisualiserSettings Settings;
 
-        public int ClientVisualiserDelay = 500;
+        public int ClientVisualiserDelay = 100;
         public ClientVisualiser ClientVisualiser;
 
         static ClientVisualiserSettings()
@@ -24,6 +24,7 @@ namespace CENTIS.UnityModuledNet.Modules
 		protected override void DrawModuleSettings()
 		{
             Settings.ClientVisualiserDelay = EditorGUILayout.IntField("ClientVisualiser Delay:", Settings.ClientVisualiserDelay);
+            Settings.ClientVisualiser = (ClientVisualiser)EditorGUILayout.ObjectField("Client Visualiser Prefab:", Settings.ClientVisualiser, typeof(ClientVisualiser), false);
         }
     }
 }
