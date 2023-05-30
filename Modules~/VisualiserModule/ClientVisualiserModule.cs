@@ -11,13 +11,11 @@ namespace CENTIS.UnityModuledNet.Modules
 {
     public class ClientVisualiserModule : UnreliableModule
     {
-		private static readonly SyncClientVisualiserSettings _settings;
-
 		private readonly Dictionary<byte, ClientVisualiser> _visualisers = new();
 
 		private Vector3 _lastCameraPosition;
 		private Vector3 _lastCameraRotation;
-		private int _clientVisualiserDelay = _settings.ClientVisualiserDelay;
+		private int _clientVisualiserDelay = ClientVisualiserSettings.Settings.ClientVisualiserDelay;
 
 		private Transform _visualiserParent;
 
@@ -28,7 +26,7 @@ namespace CENTIS.UnityModuledNet.Modules
 			ModuledNetManager.OnClientDisconnected += RemoveConnectedClient;
 
 			_visualiserParent = new GameObject().transform;
-			_visualiserParent.name = "SceneSync Visualiser Parent";
+			_visualiserParent.name = "ClientVisualiser Parent";
 			// TODO : cant hide the object if it's not automatically deleted, cuz a user won't be able to delete it neither
 			//_visualiserParent.gameObject.hideFlags = HideFlags.HideInHierarchy;
 		}
@@ -90,7 +88,7 @@ namespace CENTIS.UnityModuledNet.Modules
 
 			if (!_visualisers.TryGetValue(sender, out ClientVisualiser visualiser))
 			{
-				GameObject obj = GameObject.Instantiate(_settings.ClientVisualiser.gameObject, _visualiserParent);
+				GameObject obj = GameObject.Instantiate(ClientVisualiserSettings.Settings.ClientVisualiser.gameObject, _visualiserParent);
 				visualiser = obj.GetComponent<ClientVisualiser>();
 				visualiser.UpdateVisualiser(client.ID, client.Username, client.Color);
 				_visualisers.Add(sender, visualiser);
@@ -113,7 +111,7 @@ namespace CENTIS.UnityModuledNet.Modules
 		private void CurrentCameraMoved(Transform camera)
 		{
 			// limit camera syncs
-			if (_clientVisualiserDelay < _settings.ClientVisualiserDelay)
+			if (_clientVisualiserDelay < ClientVisualiserSettings.Settings.ClientVisualiserDelay)
 			{
 				camera.hasChanged = false;
 				return;
