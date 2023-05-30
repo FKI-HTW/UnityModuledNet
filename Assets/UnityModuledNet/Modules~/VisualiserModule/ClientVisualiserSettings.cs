@@ -6,7 +6,7 @@ using UnityEditor;
 namespace CENTIS.UnityModuledNet.Modules
 {
     [InitializeOnLoad()]
-    public class ClientVisualiserSettings : ModuleSyncSettings
+    public class ClientVisualiserSettings : ModuleSettings
     {
         public static ClientVisualiserSettings Settings;
 

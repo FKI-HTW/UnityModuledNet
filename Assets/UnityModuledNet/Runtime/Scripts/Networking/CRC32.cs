@@ -1,6 +1,6 @@
 namespace CENTIS.UnityModuledNet.Networking
 {
-	internal static class SyncCRC32
+	internal static class CRC32Hash
 	{
 		private static readonly uint[] crc32 =
 		{	// lsb CRC polynomial 0xedb88320 

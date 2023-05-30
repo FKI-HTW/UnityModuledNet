@@ -17,8 +17,8 @@ namespace CENTIS.UnityModuledNet
 
         private static ModuledNetSettings cachedSettings;
 
-        private static readonly HashSet<ModuleSyncSettings> _moduleSettings = new();
-        public HashSet<ModuleSyncSettings> ModuleSettings => _moduleSettings;
+        private static readonly HashSet<ModuleSettings> _moduleSettings = new();
+        public HashSet<ModuleSettings> ModuleSettings => _moduleSettings;
 
         // settings
         // user settings
@@ -136,7 +136,7 @@ namespace CENTIS.UnityModuledNet
 				settings = ScriptableObject.CreateInstance<ModuledNetSettings>();
 			}
 #endif
-            if (settings is ModuleSyncSettings moduleSyncSettings)
+            if (settings is ModuleSettings moduleSyncSettings)
             {
                 _moduleSettings.Add(moduleSyncSettings);
             }
@@ -165,7 +165,7 @@ namespace CENTIS.UnityModuledNet
 		public static SettingsProvider CreateSyncSettingsProvider()
 		{
 			ModuledNetSettings.GetOrCreateSettings();
-			return new ModuledNetSettingsProvider("Project/UnitySync", SettingsScope.Project);
+			return new ModuledNetSettingsProvider("Project/ModuledNet", SettingsScope.Project);
 		}
 
 		public ModuledNetSettingsProvider(string path, SettingsScope scopes, IEnumerable<string> keywords = null) 

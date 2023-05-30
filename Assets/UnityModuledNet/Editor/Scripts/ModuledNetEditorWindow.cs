@@ -3,14 +3,14 @@ using UnityEngine;
 using UnityEditor;
 using CENTIS.UnityModuledNet.Networking;
 
-namespace CENTIS.UnityModuledNet.SceneSync
+namespace CENTIS.UnityModuledNet
 {
     internal class ModuledEditorEditorWindow : EditorWindow
     {
         #region private members
 
         private static ModuledNetSettings _settings;
-        private Editor _syncSettingsEditor;
+        private Editor _settingsEditor;
 
         private Vector2 _serversViewPos;
         private Vector2 _clientsViewPos;
@@ -39,7 +39,7 @@ namespace CENTIS.UnityModuledNet.SceneSync
 		{
             _texture = new(1, 1);
             _settings = ModuledNetSettings.GetOrCreateSettings();
-            _syncSettingsEditor = Editor.CreateEditor(_settings);
+            _settingsEditor = Editor.CreateEditor(_settings);
             ModuledNetManager.OnSyncMessageAdded += AddSyncMessage;
             ModuledNetManager.OnServerListChanged += Repaint;
         }
@@ -59,10 +59,10 @@ namespace CENTIS.UnityModuledNet.SceneSync
         {
             EditorGUILayout.BeginVertical(EditorStyles.inspectorDefaultMargins);
 			{
-                GUILayout.Label("UnitySync", EditorStyles.largeLabel);
+                GUILayout.Label("ModuledNet", EditorStyles.largeLabel);
 
                 // user settings
-                _syncSettingsEditor.OnInspectorGUI();
+                _settingsEditor.OnInspectorGUI();
 
                 // module settings
                 if (_settings.ModuleSettings.Count > 0)
@@ -83,19 +83,13 @@ namespace CENTIS.UnityModuledNet.SceneSync
 
                 if (!ModuledNetManager.IsServerDiscoveryActive)
 				{
-                    GUILayout.Label($"Client has stopped working!");
-                    if (GUILayout.Button(new GUIContent("Reset Client"), GUILayout.ExpandWidth(false)))
+                    GUILayout.Label($"Server Discovery is inactive!");
+                    if (GUILayout.Button(new GUIContent("Restart Server Discovery"), GUILayout.ExpandWidth(false)))
 					{
                         ModuledNetManager.ResetClient();
                         Repaint();
 					}
 				}
-
-                if (GUILayout.Button("Reset Client"))
-                {
-                    ModuledNetManager.ResetClient();
-                    Repaint();
-                }
 
                 if (!ModuledNetManager.IsConnected)
                 {

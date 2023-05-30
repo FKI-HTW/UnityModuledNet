@@ -346,7 +346,7 @@ namespace CENTIS.UnityModuledNet
 				if (f.MemberType == MemberTypes.Method)
 					moduleValues += f.Name;
 			}
-			uint hash = SyncCRC32.CRC32Bytes(Encoding.ASCII.GetBytes(moduleValues));
+			uint hash = CRC32Hash.CRC32Bytes(Encoding.ASCII.GetBytes(moduleValues));
 
 			if (_registeredModules.TryGetValue(hash, out _))
 			{
@@ -409,7 +409,7 @@ namespace CENTIS.UnityModuledNet
 		/// Retrieves the Settings used for the Sync Client.
 		/// </summary>
 		/// <returns></returns>
-		public static ModuledNetSettings GetSyncSettings()
+		public static ModuledNetSettings GetModuledNetSettings()
 		{
 			return ModuledNetSettings.GetOrCreateSettings();
 		}
