@@ -4,7 +4,7 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 {
 	internal class DataPacket : ASequencedNetworkPacket
 	{
-		public byte? ClientID { get; private set; }
+		public byte ClientID { get; private set; }
 		public Action<bool> Callback { get; private set; }
 		public uint ModuleHash { get; private set; }
 		public byte[] Data { get; private set; }
@@ -16,7 +16,7 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 		public DataPacket(EPacketType type, uint moduleHash, byte[] data, Action<bool> callback, byte? clientID)
 		{
 			Type = type;
-			ClientID = clientID;
+			ClientID = clientID ?? 0;
 			ModuleHash = moduleHash;
 			Data = data;
 			Callback = callback;
@@ -30,7 +30,7 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 			ushort numberOfSlices, ushort sliceNumber)
 		{
 			Type = type;
-			ClientID = clientID;
+			ClientID = clientID ?? 0;
 			ModuleHash = moduleHash;
 			Data = data;
 			Callback = callback;
@@ -52,7 +52,7 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 			byte[] bytes = new byte[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_HASH_LENGTH + Data.Length];
 			bytes[ModuledNetSettings.CRC32_LENGTH] = (byte)Type;
 			Array.Copy(BitConverter.GetBytes(sequence), 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH, ModuledNetSettings.SEQUENCE_ID_LENGTH);
-			bytes[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength] = (byte)ClientID;
+			bytes[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength] = ClientID;
 			Array.Copy(BitConverter.GetBytes(ModuleHash), 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH, ModuledNetSettings.MODULE_HASH_LENGTH);
 			Array.Copy(Data, 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_HASH_LENGTH, Data.Length);
 
