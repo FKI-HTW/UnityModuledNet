@@ -369,7 +369,7 @@ namespace CENTIS.UnityModuledNet
 			return _registeredModules.TryGetValue(moduleHash, out _);
 		}
 
-		internal static void SendDataReliable(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		internal static void SendDataReliable(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (!IsEligibleForSending(onDataSend))
 				return;
@@ -377,7 +377,7 @@ namespace CENTIS.UnityModuledNet
 			_socket.SendDataReliable(moduleHash, data, onDataSend, receiver);
 		}
 
-		internal static void SendDataReliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		internal static void SendDataReliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (!IsEligibleForSending(onDataSend))
 				return;
@@ -385,7 +385,7 @@ namespace CENTIS.UnityModuledNet
 			_socket.SendDataReliableUnordered(moduleHash, data, onDataSend, receiver);
 		}
 
-		internal static void SendDataUnreliable(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		internal static void SendDataUnreliable(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (!IsEligibleForSending(onDataSend))
 				return;
@@ -393,7 +393,7 @@ namespace CENTIS.UnityModuledNet
 			_socket.SendDataUnreliable(moduleHash, data, onDataSend, receiver);
 		}
 
-		internal static void SendDataUnreliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		internal static void SendDataUnreliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (!IsEligibleForSending(onDataSend))
 				return;
