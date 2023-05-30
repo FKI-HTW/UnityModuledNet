@@ -84,7 +84,7 @@ namespace CENTIS.UnityModuledNet
 		/// <param name="receiver">
 		/// A Client in the same Server that should receive the Packet. If the Receiver is null, all Clients receive the Packet.
 		/// </param>
-		public override void SendData(byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			ModuledNetManager.SendDataReliable(ModuleHash, data, onDataSend, receiver);
 		}
@@ -100,7 +100,7 @@ namespace CENTIS.UnityModuledNet
 		/// <param name="receiver">
 		/// A Client in the same Server that should receive the Packet. If the Receiver is null, all Clients receive the Packet.
 		/// </param>
-		public override void SendData(byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			ModuledNetManager.SendDataReliableUnordered(ModuleHash, data, onDataSend, receiver);
 		}
@@ -118,7 +118,7 @@ namespace CENTIS.UnityModuledNet
 		/// <param name="receiver">
 		/// A Client in the same Server that should receive the Packet. If the Receiver is null, all Clients receive the Packet.
 		/// </param>
-		public override void SendData(byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			ModuledNetManager.SendDataUnreliable(ModuleHash, data, onDataSend, receiver);
 		}
@@ -136,7 +136,7 @@ namespace CENTIS.UnityModuledNet
 		/// <param name="receiver">
 		/// A Client in the same Server that should receive the Packet. If the Receiver is null, all Clients receive the Packet.
 		/// </param>
-		public override void SendData(byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			ModuledNetManager.SendDataUnreliableUnordered(ModuleHash, data, onDataSend, receiver);
 		}
