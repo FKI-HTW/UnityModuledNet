@@ -12,11 +12,11 @@ namespace CENTIS.UnityModuledNet
     /// static SceneSyncSettings()
     /// {
     ///     AssemblyReloadEvents.afterAssemblyReload += () =>
-    ///         _settings = SyncSettings.GetOrCreateSettings<SceneSyncSettings>("Scene");
+    ///         _settings = ModuledNetSettings.GetOrCreateSettings<SceneSyncSettings>("Scene");
     /// }
     /// </summary>
     [System.Serializable]
-    public abstract class ModuleSyncSettings : ScriptableObject
+    public abstract class ModuleSettings : ScriptableObject
     {
         private bool _settingsVisibleInGUI = false;
 

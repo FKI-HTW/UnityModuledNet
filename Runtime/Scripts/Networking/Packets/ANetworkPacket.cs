@@ -30,7 +30,7 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
             Array.Copy(BitConverter.GetBytes(ModuledNetSettings.PROTOCOL_ID), 0, bytes, 0, ModuledNetSettings.PROTOCOL_ID_LENGTH);
             Array.Copy(packetData, 0, bytes, ModuledNetSettings.PROTOCOL_ID_LENGTH, packetData.Length);
 
-            return SyncCRC32.CRC32Bytes(bytes);
+            return CRC32Hash.CRC32Bytes(bytes);
         }
 
         protected virtual bool CheckCRC32Checksum(byte[] packet)
