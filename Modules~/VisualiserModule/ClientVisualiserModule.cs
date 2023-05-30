@@ -13,6 +13,8 @@ namespace CENTIS.UnityModuledNet.Modules
     {
 		private readonly Dictionary<byte, ClientVisualiser> _visualisers = new();
 
+		private const string PARENT_NAME = "ClientVisualiser Parent";
+
 		private Vector3 _lastCameraPosition;
 		private Vector3 _lastCameraRotation;
 		private int _clientVisualiserDelay = ClientVisualiserSettings.Settings.ClientVisualiserDelay;
@@ -25,8 +27,9 @@ namespace CENTIS.UnityModuledNet.Modules
 		{
 			ModuledNetManager.OnClientDisconnected += RemoveConnectedClient;
 
-			_visualiserParent = new GameObject().transform;
-			_visualiserParent.name = "ClientVisualiser Parent";
+			GameObject parent = GameObject.Find(PARENT_NAME);
+			_visualiserParent = parent == null ? new GameObject().transform : parent.transform;
+			_visualiserParent.name = PARENT_NAME;
 			// TODO : cant hide the object if it's not automatically deleted, cuz a user won't be able to delete it neither
 			//_visualiserParent.gameObject.hideFlags = HideFlags.HideInHierarchy;
 		}
