@@ -1,3 +1,5 @@
+
+using System;
 using System.Net;
 
 namespace CENTIS.UnityModuledNet.Networking
@@ -8,6 +10,7 @@ namespace CENTIS.UnityModuledNet.Networking
         public string Servername { get; private set; }
         public byte MaxNumberConnectedClients { get; set; }
         public byte NumberConnectedClients { get; set; }
+        public readonly DateTime LastHeartbeat;
 
         public ServerInformation(IPAddress ip, string servername, byte maxNumberConnectedClients, byte? numberOfConnectedClients = null)
         {
@@ -15,6 +18,7 @@ namespace CENTIS.UnityModuledNet.Networking
             Servername = servername;
             MaxNumberConnectedClients = maxNumberConnectedClients;
             NumberConnectedClients = numberOfConnectedClients ?? 1;
+            LastHeartbeat = DateTime.Now;
         }
 
         public override bool Equals(object obj)

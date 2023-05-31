@@ -363,6 +363,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			byte newID = AddClient(sender).ID;
 			_packetsToSend.Enqueue((sender, new ConnectionAcceptedPacket(newID)));
 			_packetsToSend.Enqueue((sender, new ServerInformationPacket(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, ServerInformation.NumberConnectedClients)));
+			_packetsToSend.Enqueue((sender, new ClientInfoPacket(ClientInformation.ID, ClientInformation.Username, ClientInformation.Color)));
 		}
 
 		private void HandleACKPacket(ClientInformationSocket sender, byte[] packet)

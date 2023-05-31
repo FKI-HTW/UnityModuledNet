@@ -30,7 +30,7 @@ namespace CENTIS.UnityModuledNet
 		public static Action OnAwake;
 		public static Action OnStart;
 		public static Action OnUpdate;
-		
+
 		public static Action OnSyncMessageAdded;
 
 		/// <summary>
@@ -85,7 +85,7 @@ namespace CENTIS.UnityModuledNet
 		{
 			get => _socket == null ? ConnectionStatus.IsDisconnected : _socket.ConnectionStatus;
 		}
-		
+
 		/// <summary>
 		/// If the Client is connected to a Server or is a Server.
 		/// </summary>
@@ -93,25 +93,25 @@ namespace CENTIS.UnityModuledNet
 		{
 			get => _socket != null && _socket.IsConnected;
 		}
-		
+
 		/// <summary>
 		/// A List of all available Servers.
 		/// </summary>
 		public static List<ServerInformation> OpenServers
-		{ 
+		{
 			get => IsServerDiscoveryActive
-				? _openServers.Values.Select(x => x.Item1).ToList()
-				: null; 
+				? _openServers.Values.ToList()
+				: null;
 		}
-		
+
 		/// <summary>
 		/// Information on the Server to which the local Client is currently connected to.
 		/// </summary>
-		public static ServerInformation CurrentServer 
-		{ 
+		public static ServerInformation CurrentServer
+		{
 			get => IsConnected
 				? _socket.ServerInformation
-				: null; 
+				: null;
 		}
 
 		/// <summary>
@@ -127,7 +127,7 @@ namespace CENTIS.UnityModuledNet
 		/// <summary>
 		/// A List of remote Clients connected to the same Server as the local Client.
 		/// </summary>
-		public static ConcurrentDictionary<byte, ClientInformation> ConnectedClients 
+		public static ConcurrentDictionary<byte, ClientInformation> ConnectedClients
 		{
 			get => IsConnected
 				? _socket.ConnectedClients
@@ -155,8 +155,8 @@ namespace CENTIS.UnityModuledNet
 		#region private fields
 
 		private readonly static ModuledNetSettings _settings = ModuledNetSettings.GetOrCreateSettings();
-		
-		private readonly static ConcurrentDictionary<IPAddress, (ServerInformation, DateTime)> _openServers = new();
+
+		private readonly static ConcurrentDictionary<IPAddress, ServerInformation> _openServers = new();
 
 		private readonly static ConcurrentDictionary<uint, ModuledNetModule> _registeredModules = new();
 
@@ -272,16 +272,13 @@ namespace CENTIS.UnityModuledNet
 						continue;
 
 					ServerInformation newServer = new(sender, heartbeat.Servername, heartbeat.MaxNumberOfClients, heartbeat.NumberOfClients);
-					if (_openServers.TryGetValue(sender, out (ServerInformation, DateTime) server))
-					{   // update server with new values
-						server.Item1 = newServer;
-						server.Item2 = DateTime.Now;
-					}
-					else
-					{   // add server to dict and create timeout
-						_openServers.TryAdd(sender, (newServer, DateTime.Now));
+					if (!_openServers.TryGetValue(sender, out ServerInformation _))
+					{
 						_ = TimeoutServer(sender);
 					}
+
+					// add new values or update server with new values
+					_openServers.AddOrUpdate(sender, newServer, (key, value) => value = newServer);
 
 					_mainThreadActions.Enqueue(() => OnServerListChanged?.Invoke());
 				}
@@ -306,9 +303,9 @@ namespace CENTIS.UnityModuledNet
 		private static async Task TimeoutServer(IPAddress serverIP)
 		{
 			await Task.Delay(_settings.ServerDiscoveryTimeout);
-			if (_openServers.TryGetValue(serverIP, out (ServerInformation, DateTime) server))
-			{	// timeout and remove servers that haven't been updated for longer than the timeout value
-				if ((DateTime.Now - server.Item2).TotalMilliseconds > _settings.ServerDiscoveryTimeout)
+			if (_openServers.TryGetValue(serverIP, out ServerInformation server))
+			{   // timeout and remove servers that haven't been updated for longer than the timeout value
+				if ((DateTime.Now - server.LastHeartbeat).TotalMilliseconds > _settings.ServerDiscoveryTimeout)
 				{
 					_openServers.TryRemove(serverIP, out _);
 					_mainThreadActions.Enqueue(() => OnServerListChanged?.Invoke());
@@ -530,7 +527,8 @@ namespace CENTIS.UnityModuledNet
 
 		public static void AddSyncMessage(ModuledNetMessage message)
 		{
-			_mainThreadActions.Enqueue(() => {
+			_mainThreadActions.Enqueue(() =>
+			{
 				SyncMessages.Add(message);
 				OnSyncMessageAdded?.Invoke();
 			});
