@@ -86,7 +86,8 @@ namespace CENTIS.UnityModuledNet
 		/// </param>
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
-			ModuledNetManager.SendDataReliable(ModuleHash, data, onDataSend, receiver);
+			if (ModuledNetManager.IsConnected)
+				ModuledNetManager.SendDataReliable(ModuleHash, data, onDataSend, receiver);
 		}
 	}
 
@@ -102,7 +103,8 @@ namespace CENTIS.UnityModuledNet
 		/// </param>
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
-			ModuledNetManager.SendDataReliableUnordered(ModuleHash, data, onDataSend, receiver);
+			if (ModuledNetManager.IsConnected)
+				ModuledNetManager.SendDataReliableUnordered(ModuleHash, data, onDataSend, receiver);
 		}
 	}
 
@@ -120,7 +122,8 @@ namespace CENTIS.UnityModuledNet
 		/// </param>
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
-			ModuledNetManager.SendDataUnreliable(ModuleHash, data, onDataSend, receiver);
+			if (ModuledNetManager.IsConnected)
+				ModuledNetManager.SendDataUnreliable(ModuleHash, data, onDataSend, receiver);
 		}
 	}
 
@@ -138,7 +141,8 @@ namespace CENTIS.UnityModuledNet
 		/// </param>
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
-			ModuledNetManager.SendDataUnreliableUnordered(ModuleHash, data, onDataSend, receiver);
+			if (ModuledNetManager.IsConnected)
+				ModuledNetManager.SendDataUnreliableUnordered(ModuleHash, data, onDataSend, receiver);
 		}
 	}
 }
