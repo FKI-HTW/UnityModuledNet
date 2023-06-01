@@ -109,7 +109,7 @@ namespace CENTIS.UnityModuledNet
 
                         for (int i = 0; i < ModuledNetManager.OpenServers?.Count; i++)
                         {
-                            ServerInformation server = ModuledNetManager.OpenServers[i];
+                            OpenServerInformation server = ModuledNetManager.OpenServers[i];
                             EditorGUILayout.BeginHorizontal(GetScrollviewRowStyle(_scrollViewColors[i % 2]));
                             {
                                 GUILayout.Label(server.Servername);

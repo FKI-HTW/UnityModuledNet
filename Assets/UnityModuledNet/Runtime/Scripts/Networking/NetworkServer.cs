@@ -233,7 +233,6 @@ namespace CENTIS.UnityModuledNet.Networking
 					byte mask = 1 << 7;
 					typeBytes &= (byte)~mask;
 					EPacketType packetType = (EPacketType)typeBytes;
-					Debug.Log(packetType);
 
 					// TODO : send connectionclosed when forcefully disconnected client sends packet
 					// TODO : otherwise refresh sequence numbers
@@ -325,7 +324,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
 			if (_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
 			{   // resend client id in case of client not receiving theirs
-				_packetsToSend.Enqueue((client.IP, new ConnectionAcceptedPacket(client.ID)));
+				_packetsToSend.Enqueue((client.IP, new ConnectionAcceptedPacket(client.ID, ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients)));
 				return;
 			}
 
@@ -360,10 +359,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				return;
 			}
 
-			byte newID = AddClient(sender).ID;
-			_packetsToSend.Enqueue((sender, new ConnectionAcceptedPacket(newID)));
-			_packetsToSend.Enqueue((sender, new ServerInformationPacket(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, ServerInformation.NumberConnectedClients)));
-			_packetsToSend.Enqueue((sender, new ClientInfoPacket(ClientInformation.ID, ClientInformation.Username, ClientInformation.Color)));
+			AddClient(sender);
 		}
 
 		private void HandleACKPacket(ClientInformationSocket sender, byte[] packet)
@@ -720,22 +716,23 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!_connectedClients.TryAdd(ip, newClient) || !_idIpTable.TryAdd(newID, ip) || !_pendingConnections.TryRemove(ip, out _))
 				throw new Exception("Something went wrong creating the Client!");
 
-			ServerInformation.NumberConnectedClients++;
-			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(newID));
+			// send server info to client
+			_packetsToSend.Enqueue((ip, new ConnectionAcceptedPacket(newID, ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients)));
+			_packetsToSend.Enqueue((ip, new ClientInfoPacket(ClientInformation.ID, ClientInformation.Username, ClientInformation.Color)));
 
 			ClientInfoPacket info = new(newID, newClient.Username, newClient.Color);
 			foreach (ClientInformationSocket client in _connectedClients.Values)
 			{
 				if (client.ID != newID)
-				{
-					// notify all other clients of new client
+				{	// notify all other clients of new client
 					_packetsToSend.Enqueue((client.IP, info));
 
 					// send data of all other clients to new client
 					_packetsToSend.Enqueue((ip, new ClientInfoPacket(client.ID, client.Username, client.Color)));
 				}
-
 			}
+
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(newID));
 
 			return newClient;
 		}
@@ -754,7 +751,6 @@ namespace CENTIS.UnityModuledNet.Networking
 
 			_packetsToSend.Enqueue((client.IP, new ConnectionClosedPacket()));
 			_connectedClients.TryRemove(client.IP, out _);
-			ServerInformation.NumberConnectedClients--;
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(clientID));
 
 			foreach (ClientInformationSocket remainingClient in _connectedClients.Values)

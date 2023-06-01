@@ -97,7 +97,7 @@ namespace CENTIS.UnityModuledNet
 		/// <summary>
 		/// A List of all available Servers.
 		/// </summary>
-		public static List<ServerInformation> OpenServers
+		public static List<OpenServerInformation> OpenServers
 		{
 			get => IsServerDiscoveryActive
 				? _openServers.Values.ToList()
@@ -156,7 +156,7 @@ namespace CENTIS.UnityModuledNet
 
 		private readonly static ModuledNetSettings _settings = ModuledNetSettings.GetOrCreateSettings();
 
-		private readonly static ConcurrentDictionary<IPAddress, ServerInformation> _openServers = new();
+		private readonly static ConcurrentDictionary<IPAddress, OpenServerInformation> _openServers = new();
 
 		private readonly static ConcurrentDictionary<uint, ModuledNetModule> _registeredModules = new();
 
@@ -271,11 +271,9 @@ namespace CENTIS.UnityModuledNet
 					if (!heartbeat.TryDeserialize())
 						continue;
 
-					ServerInformation newServer = new(sender, heartbeat.Servername, heartbeat.MaxNumberOfClients, heartbeat.NumberOfClients);
-					if (!_openServers.TryGetValue(sender, out ServerInformation _))
-					{
+					OpenServerInformation newServer = new(sender, heartbeat.Servername, heartbeat.MaxNumberOfClients, heartbeat.NumberOfClients);
+					if (!_openServers.TryGetValue(sender, out OpenServerInformation _))
 						_ = TimeoutServer(sender);
-					}
 
 					// add new values or update server with new values
 					_openServers.AddOrUpdate(sender, newServer, (key, value) => value = newServer);
@@ -303,7 +301,7 @@ namespace CENTIS.UnityModuledNet
 		private static async Task TimeoutServer(IPAddress serverIP)
 		{
 			await Task.Delay(_settings.ServerDiscoveryTimeout);
-			if (_openServers.TryGetValue(serverIP, out ServerInformation server))
+			if (_openServers.TryGetValue(serverIP, out OpenServerInformation server))
 			{   // timeout and remove servers that haven't been updated for longer than the timeout value
 				if ((DateTime.Now - server.LastHeartbeat).TotalMilliseconds > _settings.ServerDiscoveryTimeout)
 				{

@@ -8,16 +8,14 @@ namespace CENTIS.UnityModuledNet.Networking
     {
         public IPAddress IP { get; private set; }
         public string Servername { get; private set; }
-        public byte MaxNumberConnectedClients { get; set; }
-        public byte NumberConnectedClients { get; set; }
-        public readonly DateTime LastHeartbeat;
+        public byte MaxNumberConnectedClients { get; private set; }
+        public DateTime LastHeartbeat { get; set; }
 
-        public ServerInformation(IPAddress ip, string servername, byte maxNumberConnectedClients, byte? numberOfConnectedClients = null)
+        public ServerInformation(IPAddress ip, string servername, byte maxNumberConnectedClients)
         {
             IP = ip;
             Servername = servername;
             MaxNumberConnectedClients = maxNumberConnectedClients;
-            NumberConnectedClients = numberOfConnectedClients ?? 1;
             LastHeartbeat = DateTime.Now;
         }
 
@@ -37,6 +35,17 @@ namespace CENTIS.UnityModuledNet.Networking
         public override int GetHashCode()
         {
             return IP.GetHashCode();
+        }
+    }
+
+    public class OpenServerInformation : ServerInformation
+    {
+        public byte NumberConnectedClients { get; private set; }
+
+        public OpenServerInformation(IPAddress ip, string servername, byte maxNumberConnectedClients, byte numberConnectedClients)
+            : base(ip, servername, maxNumberConnectedClients)
+        {
+            NumberConnectedClients = numberConnectedClients;
         }
     }
 }

@@ -224,7 +224,6 @@ namespace CENTIS.UnityModuledNet.Networking
 					byte mask = 1 << 7;
 					typeBytes &= (byte)~mask;
 					EPacketType packetType = (EPacketType)typeBytes;
-					Debug.Log(packetType);
 
 					// handle individual packet types
 					switch (packetType)
@@ -317,7 +316,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!serverInformation.TryDeserialize())
 				return;
 
-			ServerInformation = new(_serverIP, serverInformation.Servername, serverInformation.MaxNumberOfClients, serverInformation.NumberOfClients);
+			ServerInformation = new(_serverIP, serverInformation.Servername, serverInformation.MaxNumberOfClients);
 		}
 
 		private void HandleACKPacket(byte[] packet)
