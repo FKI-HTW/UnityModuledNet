@@ -188,7 +188,7 @@ namespace CENTIS.UnityModuledNet
 
 			DataReceived += OnDataReceived;
 
-			ResetClient();
+			ResetServerDiscovery();
 		}
 
 		public static void Init() { }
@@ -412,10 +412,10 @@ namespace CENTIS.UnityModuledNet
 		}
 
 		/// <summary>
-		/// Resets the Client. Use this when Exceptions ocurred or the Service Discovery was closed.
+		/// Resets the Server Discovery. Use this when Exceptions ocurred or the Service Discovery was closed.
 		/// </summary>
-		/// <returns><see langword="true"/> if the Client is Active after the Reset</returns>
-		public static bool ResetClient()
+		/// <returns><see langword="true"/> if the Server Discovery is Active after the Reset</returns>
+		public static bool ResetServerDiscovery()
 		{
 			try
 			{

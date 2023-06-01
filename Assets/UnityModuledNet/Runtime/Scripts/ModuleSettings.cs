@@ -28,7 +28,9 @@ namespace CENTIS.UnityModuledNet
             _settingsVisibleInGUI = EditorGUILayout.Foldout(_settingsVisibleInGUI, SettingsName, EditorStyles.foldoutHeader);
             if (_settingsVisibleInGUI)
             {
+                EditorGUI.indentLevel++;
                 DrawModuleSettings();
+                EditorGUI.indentLevel--;
             }
 #endif
         }
