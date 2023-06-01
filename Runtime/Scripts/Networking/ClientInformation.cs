@@ -14,13 +14,9 @@ namespace CENTIS.UnityModuledNet.Networking
 		public Color32 Color = new(255, 255, 255, 255);
 		public bool IsHost => ID == 1;
 
-		public ClientInformation(byte id)
+		public ClientInformation(byte id, string username, Color32 color)
 		{
 			ID = id;
-		}
-
-		public ClientInformation(byte id, string username, Color32 color) : this(id)
-		{
 			Username = username;
 			Color = color;
 		}
@@ -64,17 +60,6 @@ namespace CENTIS.UnityModuledNet.Networking
 		internal ushort ReliableLocalSequence { get; set; }
 		internal ushort ReliableRemoteSequence { get; set; }
 		
-		public ClientInformationSocket(byte id, IPAddress ip) : base(id) 
-		{
-			IP = ip;
-			LastHeartbeat = DateTime.Now;
-
-			UnreliableLocalSequence = 0;
-			UnreliableRemoteSequence = 0;
-			ReliableLocalSequence = 0;
-			ReliableRemoteSequence = 0;
-		}
-
 		public ClientInformationSocket(byte id, IPAddress ip, string username, Color32 color) : base(id, username, color)
 		{
 			IP = ip;
