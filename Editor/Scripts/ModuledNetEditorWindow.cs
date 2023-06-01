@@ -86,7 +86,7 @@ namespace CENTIS.UnityModuledNet
                     GUILayout.Label($"Server Discovery is inactive!");
                     if (GUILayout.Button(new GUIContent("Restart Server Discovery"), GUILayout.ExpandWidth(false)))
 					{
-                        ModuledNetManager.ResetClient();
+                        ModuledNetManager.ResetServerDiscovery();
                         Repaint();
 					}
 				}
