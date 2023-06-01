@@ -47,6 +47,8 @@ namespace CENTIS.UnityModuledNet
 				_settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", _settings.DiscoveryPort);
 				_settings.MTU = EditorGUILayout.IntField("MTU:", _settings.MTU);
 				_settings.RTT = EditorGUILayout.IntField("RTT:", _settings.RTT);
+				if (GUILayout.Button("Reset Server Discovery"))
+					ModuledNetManager.ResetServerDiscovery();
 				EditorGUI.indentLevel--;
 			}
 
