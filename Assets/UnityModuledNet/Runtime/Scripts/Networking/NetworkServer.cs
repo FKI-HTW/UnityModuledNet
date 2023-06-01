@@ -771,6 +771,13 @@ namespace CENTIS.UnityModuledNet.Networking
 		/// <returns></returns>
 		private bool CheckIfEligibleForSending(Action<bool> dataCallback, byte? receiver = null)
 		{
+			if (!IsConnected)
+			{
+				Debug.LogError("The local Client is currently not connected to a Server!");
+				dataCallback?.Invoke(false);
+				return false;
+			}
+
 			if (receiver != null && !GetClientById((byte)receiver, out ClientInformationSocket _))
 			{
 				Debug.LogError("The given Receiver does not exist in the Server!");
