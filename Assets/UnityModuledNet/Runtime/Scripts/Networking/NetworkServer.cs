@@ -56,7 +56,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
 				if (!IsASCIIString(servername) || !IsASCIIString(_settings.Username))
 				{
-					Debug.LogError($"The Servername or Username contains a non-ASCII Character!");
+					Debug.LogError($"The Servername and Username must be ASCII Strings!");
 					onConnectionEstablished?.Invoke(false);
 					return;
 				}
@@ -359,7 +359,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				return;
 			}
 
-			AddClient(sender);
+			AddClient(sender, challengeAnswer.Username, challengeAnswer.Color);
 		}
 
 		private void HandleACKPacket(ClientInformationSocket sender, byte[] packet)
@@ -695,7 +695,7 @@ namespace CENTIS.UnityModuledNet.Networking
 		/// <param name="username"></param>
 		/// <param name="color"></param>
 		/// <returns></returns>
-		private ClientInformationSocket AddClient(IPAddress ip)
+		private ClientInformationSocket AddClient(IPAddress ip, string username, Color32 color)
 		{
 			// find next available client id
 			byte newID = 0;
@@ -712,7 +712,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				throw new Exception("Something went wrong assigning the Client ID!");
 
 			// create client
-			ClientInformationSocket newClient = new(newID, ip);
+			ClientInformationSocket newClient = new(newID, ip, username, color);
 			if (!_connectedClients.TryAdd(ip, newClient) || !_idIpTable.TryAdd(newID, ip) || !_pendingConnections.TryRemove(ip, out _))
 				throw new Exception("Something went wrong creating the Client!");
 

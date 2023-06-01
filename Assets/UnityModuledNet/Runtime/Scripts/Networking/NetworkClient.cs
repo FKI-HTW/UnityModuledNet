@@ -34,6 +34,9 @@ namespace CENTIS.UnityModuledNet.Networking
 		private ushort _reliableRemoteSequence = 0;
 		public DateTime _lastHeartbeat;
 
+		private readonly string _tmpUsername;
+		private readonly Color32 _tmpColor;
+
 		#endregion
 
 		#region public properties
@@ -51,14 +54,26 @@ namespace CENTIS.UnityModuledNet.Networking
 				if (!CheckLocalIP(ModuledNetManager.LocalIP))
 				{
 					Debug.LogError("No network interface possesses the given local IP!");
+					onConnectionEstablished?.Invoke(false);
 					return;
 				}
 
 				if (serverIP == null)
 				{
 					Debug.LogError("The given server IP is not a valid IP!");
+					onConnectionEstablished?.Invoke(false);
 					return;
 				}
+
+				if (_settings.Username.Length > 100 || !IsASCIIString(_settings.Username))
+				{
+					Debug.LogError("The Username must be shorter than 100 characters and be an ASCII string!");
+					onConnectionEstablished?.Invoke(false);
+					return;
+				}
+
+				_tmpUsername = _settings.Username;
+				_tmpColor = _settings.Color;
 
 				ConnectionStatus = ConnectionStatus.IsConnecting;
 
@@ -345,7 +360,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!connectionChallenge.TryDeserialize())
 				return;
 
-			ChallengeAnswerPacket challengeAnswer = new(connectionChallenge.Challenge);
+			ChallengeAnswerPacket challengeAnswer = new(connectionChallenge.Challenge, _tmpUsername, _tmpColor);
 			_packetsToSend.Enqueue(challengeAnswer);
 		}
 
@@ -359,17 +374,8 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!connectionAccepted.TryDeserialize())
 				return;
 
-			ClientInformation = new(connectionAccepted.ClientID);
-
-			if (_settings.Username.Length < 100 && IsASCIIString(_settings.Username))
-			{
-				ClientInformation.Username = _settings.Username;
-			}
-
-			ClientInformation.Color = _settings.Color;
-
-			ClientInfoPacket clientInfo = new(ClientInformation.ID, ClientInformation.Username, ClientInformation.Color);
-			_packetsToSend.Enqueue(clientInfo);
+			ClientInformation = new(connectionAccepted.ClientID, _tmpUsername, _tmpColor);
+			ServerInformation = new(_serverIP, connectionAccepted.Servername, connectionAccepted.MaxNumberConnectedClients);
 
 			_mainThreadActions.Enqueue(() => _onConnectionEstablished?.Invoke(true));
 			_mainThreadActions.Enqueue(() => ConnectionStatus = ConnectionStatus.IsConnected);
