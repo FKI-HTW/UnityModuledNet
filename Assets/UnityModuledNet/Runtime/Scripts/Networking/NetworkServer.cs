@@ -470,8 +470,10 @@ namespace CENTIS.UnityModuledNet.Networking
 				case DataPacket dataPacket:
 					if (dataPacket.ClientID > 1)
 					{   // forward packet to specified client
-						if (GetClientById((byte)dataPacket.ClientID, out ClientInformationSocket targetClient))
+						if (GetClientById(dataPacket.ClientID, out ClientInformationSocket targetClient))
 							CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleHash, dataPacket.Data, null, targetClient.IP, sender.ID);
+						else
+							_packetsToSend.Enqueue((sender.IP, new ClientDisconnectedPacket(dataPacket.ClientID)));
 						return;
 					}
 
