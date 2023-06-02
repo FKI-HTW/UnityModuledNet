@@ -69,6 +69,11 @@ namespace CENTIS.UnityModuledNet
 		public static Action<byte> OnClientDisconnected;
 
 		/// <summary>
+		/// Action for when a Client was added or removed from ConnectedClients.
+		/// </summary>
+		public static Action OnConnectedClientListChanged;
+
+		/// <summary>
 		/// Action for when a Server was added or removed from the OpenServers.
 		/// </summary>
 		public static Action OnServerListChanged;

@@ -493,6 +493,8 @@ namespace CENTIS.UnityModuledNet.Networking
 					foreach (ClientInformationSocket client in _connectedClients.Values)
 						if (sender.ID != client.ID)
 							_packetsToSend.Enqueue((client.IP, info));
+
+					_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 					break;
 				default: break;
 			}
@@ -735,6 +737,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			}
 
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(newID));
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 
 			return newClient;
 		}
@@ -753,11 +756,13 @@ namespace CENTIS.UnityModuledNet.Networking
 
 			_packetsToSend.Enqueue((client.IP, new ConnectionClosedPacket()));
 			_connectedClients.TryRemove(client.IP, out _);
-			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(clientID));
 
 			foreach (ClientInformationSocket remainingClient in _connectedClients.Values)
 				_packetsToSend.Enqueue((remainingClient.IP, new ClientDisconnectedPacket(clientID)));
 			
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(clientID));
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
+
 			if (saveClient)
 			{
 				// TODO : save disconnected clients in buffer unless forcefully disconnected

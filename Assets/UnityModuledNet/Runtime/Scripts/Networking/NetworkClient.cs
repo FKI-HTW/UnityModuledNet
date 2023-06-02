@@ -515,6 +515,7 @@ namespace CENTIS.UnityModuledNet.Networking
 					// add or update connected client
 					ClientInformation clientInfo = new(clientInfoPacket.ClientID, clientInfoPacket.Username, clientInfoPacket.Color);
 					_connectedClients.AddOrUpdate(clientInfoPacket.ClientID, clientInfo, (key, oldvalue) => oldvalue = clientInfo);
+					_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 					break;
 				default: break;
 			}
