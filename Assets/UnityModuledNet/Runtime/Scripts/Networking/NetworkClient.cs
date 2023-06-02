@@ -32,7 +32,6 @@ namespace CENTIS.UnityModuledNet.Networking
 		private ushort _unreliableRemoteSequence = 0;
 		private ushort _reliableLocalSequence = 0;
 		private ushort _reliableRemoteSequence = 0;
-		public DateTime _lastHeartbeat;
 
 		private readonly string _tmpUsername;
 		private readonly Color32 _tmpColor;
@@ -271,7 +270,7 @@ namespace CENTIS.UnityModuledNet.Networking
 							if (!IsConnected)
 								break;
 
-							_lastHeartbeat = DateTime.Now;
+							ServerInformation.LastHeartbeat = DateTime.Now;
 							DataPacket dataPacket = new(packetType, receivedBytes);
 							if (!dataPacket.TryDeserialize())
 								break;
@@ -288,7 +287,7 @@ namespace CENTIS.UnityModuledNet.Networking
 							if (!IsConnected)
 								break;
 
-							_lastHeartbeat = DateTime.Now;
+							ServerInformation.LastHeartbeat = DateTime.Now;
 							ClientInfoPacket clientInfoPacket = new(receivedBytes);
 							if (!clientInfoPacket.TryDeserialize())
 								break;
@@ -326,7 +325,6 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!IsConnected)
 				return;
 
-			_lastHeartbeat = DateTime.Now;
 			ServerInformationPacket serverInformation = new(packet);
 			if (!serverInformation.TryDeserialize())
 				return;
@@ -339,7 +337,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!IsConnected)
 				return;
 
-			_lastHeartbeat = DateTime.Now;
+			ServerInformation.LastHeartbeat = DateTime.Now;
 			ACKPacket ack = new(packet);
 			if (!ack.TryDeserialize())
 				return;
@@ -355,7 +353,6 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (ConnectionStatus != ConnectionStatus.IsConnecting)
 				return;
 
-			_lastHeartbeat = DateTime.Now;
 			ConnectionChallengePacket connectionChallenge = new(packet);
 			if (!connectionChallenge.TryDeserialize())
 				return;
@@ -369,7 +366,6 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (ConnectionStatus != ConnectionStatus.IsConnecting)
 				return;
 
-			_lastHeartbeat = DateTime.Now;
 			ConnectionAcceptedPacket connectionAccepted = new(packet);
 			if (!connectionAccepted.TryDeserialize())
 				return;
@@ -386,7 +382,6 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (ConnectionStatus != ConnectionStatus.IsConnecting)
 				return;
 
-			_lastHeartbeat = DateTime.Now;
 			ConnectionDeniedPacket connectionDenied = new(packet);
 			if (!connectionDenied.TryDeserialize())
 				return;
@@ -400,7 +395,6 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!IsConnected)
 				return;
 
-			_lastHeartbeat = DateTime.Now;
 			ConnectionClosedPacket connectionClosed = new(packet);
 			if (!connectionClosed.TryDeserialize())
 				return;
@@ -413,7 +407,6 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!IsConnected)
 				return;
 
-			_lastHeartbeat = DateTime.Now;
 			ClientDisconnectedPacket clientDisconnected = new(packet);
 			if (!clientDisconnected.TryDeserialize())
 				return;
