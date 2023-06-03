@@ -41,6 +41,7 @@ namespace CENTIS.UnityModuledNet
             _settings = ModuledNetSettings.GetOrCreateSettings();
             _settingsEditor = Editor.CreateEditor(_settings);
             ModuledNetManager.OnSyncMessageAdded += AddSyncMessage;
+            ModuledNetManager.OnConnectedClientListChanged += Repaint;
             ModuledNetManager.OnServerListChanged += Repaint;
         }
 
@@ -51,6 +52,7 @@ namespace CENTIS.UnityModuledNet
         private void OnDestroy()
 		{
             ModuledNetManager.OnSyncMessageAdded -= AddSyncMessage;
+            ModuledNetManager.OnConnectedClientListChanged -= Repaint;
             ModuledNetManager.OnServerListChanged -= Repaint;
         }
 
