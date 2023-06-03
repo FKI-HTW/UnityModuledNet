@@ -519,7 +519,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				while (_disposeCount == 0)
 				{   // send heartbeat used for discovery until server is closed
 					// TODO : only recalculate if connected clients changed
-					ServerInformationPacket heartbeat = new(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, (byte)_connectedClients.Count);
+					ServerInformationPacket heartbeat = new(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, (byte)(_connectedClients.Count + 1));
 					byte[] heartbeatBytes = heartbeat.Serialize();
 					heartbeatClient.Send(heartbeatBytes, heartbeatBytes.Length, remoteEndpoint);
 					Thread.Sleep(_settings.ServerHeartbeatDelay);
