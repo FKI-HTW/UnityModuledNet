@@ -32,7 +32,7 @@ namespace CENTIS.UnityModuledNet
             get => _maxNumberClients;
             set
             {
-                if (value < 254 && value > 1)
+                if (value < 254 && value > 1 && _maxNumberClients != value)
                     _maxNumberClients = value;
             }
         }
@@ -52,6 +52,9 @@ namespace CENTIS.UnityModuledNet
             get => _mtu;
             set
             {
+                if (_mtu == value)
+                    return;
+
                 if (ModuledNetManager.IsConnected)
                 {
                     Debug.LogWarning("The MTU should not be changed while connected to a Server!");
@@ -68,6 +71,9 @@ namespace CENTIS.UnityModuledNet
             get => _rtt;
             set
             {
+                if (_rtt == value)
+                    return;
+
                 if (ModuledNetManager.IsConnected)
                 {
                     Debug.LogWarning("The RTT should not be changed while connected to a Server!");
