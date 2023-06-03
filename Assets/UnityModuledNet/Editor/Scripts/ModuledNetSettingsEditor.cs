@@ -36,7 +36,7 @@ namespace CENTIS.UnityModuledNet
 				EditorGUI.indentLevel--;
 			}
 
-				// debug settings
+			// debug settings
 			_debugSettingsIsVisible = EditorGUILayout.Foldout(_debugSettingsIsVisible, "Debug Settings", EditorStyles.foldoutHeader);
 			if (_debugSettingsIsVisible)
 			{
