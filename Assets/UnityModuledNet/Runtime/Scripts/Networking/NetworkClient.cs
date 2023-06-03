@@ -154,6 +154,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
 				ConnectionStatus = ConnectionStatus.IsDisconnected;
 				ServerInformation = null;
+				ClientInformation = null;
 			}
 		}
 
@@ -411,7 +412,11 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!clientDisconnected.TryDeserialize())
 				return;
 
-			_connectedClients.TryRemove(clientDisconnected.ClientID, out _);
+			if (!_connectedClients.TryRemove(clientDisconnected.ClientID, out _))
+				return;
+
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientDisconnected?.Invoke(clientDisconnected.ClientID));
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged.Invoke());
 		}
 
 		private void HandleSequencedPacket(ASequencedNetworkPacket packet)
@@ -509,12 +514,22 @@ namespace CENTIS.UnityModuledNet.Networking
 			{
 				case DataPacket dataPacket:
 					// notify manager of received data, consuming the packet
-					ModuledNetManager.DataReceived?.Invoke(dataPacket.ModuleHash, (byte)dataPacket.ClientID, dataPacket.Data);
+					_mainThreadActions.Enqueue(() => ModuledNetManager.DataReceived?.Invoke(dataPacket.ModuleHash, dataPacket.ClientID, dataPacket.Data));
 					break;
 				case ClientInfoPacket clientInfoPacket:
 					// add or update connected client
-					ClientInformation clientInfo = new(clientInfoPacket.ClientID, clientInfoPacket.Username, clientInfoPacket.Color);
-					_connectedClients.AddOrUpdate(clientInfoPacket.ClientID, clientInfo, (key, oldvalue) => oldvalue = clientInfo);
+					ClientInformation newClient = new(clientInfoPacket.ClientID, clientInfoPacket.Username, clientInfoPacket.Color);
+
+					if (_connectedClients.TryGetValue(clientInfoPacket.ClientID, out ClientInformation oldClient))
+					{
+						_connectedClients.TryUpdate(clientInfoPacket.ClientID, oldClient, newClient);
+					}
+					else
+					{
+						_connectedClients.TryAdd(clientInfoPacket.ClientID, newClient);
+						_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(clientInfoPacket.ClientID));
+					}
+
 					_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 					break;
 				default: break;
