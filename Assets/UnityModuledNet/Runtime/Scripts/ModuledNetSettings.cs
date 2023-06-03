@@ -1,6 +1,9 @@
 using System.IO;
 using UnityEngine;
 using System.Collections.Generic;
+using CENTIS.UnityModuledNet.Managing;
+using CENTIS.UnityModuledNet.Modules;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -57,7 +60,7 @@ namespace CENTIS.UnityModuledNet
 
                 if (ModuledNetManager.IsConnected)
                 {
-                    Debug.LogWarning("The MTU should not be changed while connected to a Server!");
+                    Debug.LogError("The MTU should not be changed while connected to a Server!");
                     return;
                 }
 
@@ -76,7 +79,7 @@ namespace CENTIS.UnityModuledNet
 
                 if (ModuledNetManager.IsConnected)
                 {
-                    Debug.LogWarning("The RTT should not be changed while connected to a Server!");
+                    Debug.LogError("The RTT should not be changed while connected to a Server!");
                     return;
                 }
 

@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace CENTIS.UnityModuledNet
+namespace CENTIS.UnityModuledNet.Managing
 {
     public abstract class ModuledNetManagerDecorator
     {

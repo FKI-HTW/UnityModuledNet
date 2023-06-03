@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using CENTIS.UnityModuledNet.Networking.Packets;
+using CENTIS.UnityModuledNet.Managing;
 
 namespace CENTIS.UnityModuledNet.Networking
 {
