@@ -150,16 +150,15 @@ namespace CENTIS.UnityModuledNet.Networking
 
 				ConnectionStatus = ConnectionStatus.IsDisconnected;
 				ServerInformation = null;
+				ClientInformation = null;
 			}
 		}
 
 		public void Update()
 		{
 			while (_mainThreadActions.Count > 0)
-			{
 				if (_mainThreadActions.TryDequeue(out Action action))
 					action?.Invoke();
-			}
 		}
 
 		#endregion
@@ -483,7 +482,7 @@ namespace CENTIS.UnityModuledNet.Networking
 							CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleHash, dataPacket.Data, null, targetClient.IP, sender.ID);
 
 					// notify manager of received data, consuming the packet
-					ModuledNetManager.DataReceived?.Invoke(dataPacket.ModuleHash, sender.ID, dataPacket.Data);
+					_mainThreadActions.Enqueue(() => ModuledNetManager.DataReceived?.Invoke(dataPacket.ModuleHash, sender.ID, dataPacket.Data));
 					break;
 				case ClientInfoPacket clientInfoPacket:
 					sender.Username = clientInfoPacket.Username;
