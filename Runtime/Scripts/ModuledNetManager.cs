@@ -25,7 +25,16 @@ namespace CENTIS.UnityModuledNet
 		#region public properties
 
 		public static bool IsDebug = false;
-		public static string LocalIP = GetLocalIPAddress();
+
+		public static string LocalIP
+		{
+			get => _localIP;
+			set
+			{
+				if (!IsConnected)
+					_localIP = value;
+			}
+		}
 
 		public static Action OnAwake;
 		public static Action OnStart;
@@ -158,6 +167,8 @@ namespace CENTIS.UnityModuledNet
 		#endregion
 
 		#region private fields
+
+		private static string _localIP = GetLocalIPAddress();
 
 		private readonly static ModuledNetSettings _settings = ModuledNetSettings.GetOrCreateSettings();
 
