@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace CENTIS.UnityModuledNet
+namespace CENTIS.UnityModuledNet.Modules
 {
     /// <summary>
     /// You need to implement the InitializeOnLoad class-attribute

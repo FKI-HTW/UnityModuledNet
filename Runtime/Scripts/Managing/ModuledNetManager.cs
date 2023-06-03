@@ -13,12 +13,13 @@ using System.Reflection;
 using UnityEngine;
 using CENTIS.UnityModuledNet.Networking;
 using CENTIS.UnityModuledNet.Networking.Packets;
+using CENTIS.UnityModuledNet.Modules;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace CENTIS.UnityModuledNet
+namespace CENTIS.UnityModuledNet.Managing
 {
 	public static class ModuledNetManager
 	{
@@ -153,7 +154,7 @@ namespace CENTIS.UnityModuledNet
 		/// </summary>
 		public static bool IsHost
 		{
-			get => IsConnected && LocalClient.IsHost;
+			get => IsConnected && LocalClient != null && LocalClient.IsHost;
 		}
 
 		public static readonly List<ModuledNetMessage> SyncMessages = new();
@@ -304,6 +305,7 @@ namespace CENTIS.UnityModuledNet
 						case ArgumentException:
 							continue;
 						case ThreadAbortException:
+							IsServerDiscoveryActive = false;
 							return;
 						default:
 							Debug.LogError("An Error occurred in the Server Discovery. Reset Server Discovery!");
@@ -334,7 +336,7 @@ namespace CENTIS.UnityModuledNet
 		{
 			if (_registeredModules.TryGetValue(moduleHash, out ModuledNetModule module))
 			{
-				_mainThreadActions.Enqueue(() => module.OnReceiveData(client, data));
+				module.OnReceiveData(client, data);
 			}
 		}
 

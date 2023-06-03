@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace CENTIS.UnityModuledNet
+namespace CENTIS.UnityModuledNet.Managing
 {
     internal class ModuledNetRuntimeManager : MonoBehaviour
     {
