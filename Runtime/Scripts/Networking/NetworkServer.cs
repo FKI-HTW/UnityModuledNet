@@ -331,7 +331,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				return;
 			}
 
-			if (_connectedClients.Count >= ServerInformation.MaxNumberConnectedClients)
+			if (_connectedClients.Count + 1 >= ServerInformation.MaxNumberConnectedClients)
 			{   // send connection denied packet if no space available
 				_packetsToSend.Enqueue((sender, new ConnectionDeniedPacket()));
 				return;
@@ -356,7 +356,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!_pendingConnections.TryGetValue(sender, out byte[] value))
 				return;
 
-			if (!CompareByteArrays(value, challengeAnswer.ChallengeAnswer) || _connectedClients.Count >= ServerInformation.MaxNumberConnectedClients)
+			if (!CompareByteArrays(value, challengeAnswer.ChallengeAnswer) || _connectedClients.Count + 1 >= ServerInformation.MaxNumberConnectedClients)
 			{   // send connection denied packet if no space available or challenge answer is incorrect
 				_packetsToSend.Enqueue((sender, new ConnectionDeniedPacket()));
 				return;
