@@ -246,6 +246,9 @@ namespace CENTIS.UnityModuledNet.Networking
 						case EPacketType.ChallengeAnswer:
 							HandleChallengeAnswerPacket(sender, receivedBytes);
 							break;
+						case EPacketType.ConnectionClosed:
+							HandleClientDisconnectedPacket(sender, receivedBytes);
+							break;
 						case EPacketType.ACK:
 							{
 								if (!_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
@@ -360,6 +363,18 @@ namespace CENTIS.UnityModuledNet.Networking
 			}
 
 			AddClient(sender, challengeAnswer.Username, challengeAnswer.Color);
+		}
+
+		private void HandleClientDisconnectedPacket(IPAddress sender, byte[] packet)
+		{
+			ClientDisconnectedPacket clientDisconnected = new(packet);
+			if (!clientDisconnected.TryDeserialize())
+				return;
+
+			if (!_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
+				return;
+
+			RemoveClient(client.ID, true);
 		}
 
 		private void HandleACKPacket(ClientInformationSocket sender, byte[] packet)
