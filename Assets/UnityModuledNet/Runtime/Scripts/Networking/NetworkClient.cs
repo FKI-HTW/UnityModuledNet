@@ -90,6 +90,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				
 				ModuledNetManager.OnUpdate += Update;
 
+				ModuledNetManager.AddModuledNetMessage(new("Connecting to Server..."));
 				_packetsToSend.Enqueue(new ConnectionRequestPacket());
 				_ = TimeoutEstablishConnection();
 			}
@@ -183,7 +184,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			byte[] data = connectionClosed.Serialize();
 			_udpClient.Send(data, data.Length, new(_serverIP, _port));
 
-			ModuledNetManager.AddSyncMessage(new("Disconnected from Server!"));
+			ModuledNetManager.AddModuledNetMessage(new("Disconnected from Server!"));
 			_mainThreadActions.Enqueue(() => Dispose());
 		}
 
@@ -377,6 +378,8 @@ namespace CENTIS.UnityModuledNet.Networking
 
 			_mainThreadActions.Enqueue(() => _onConnectionEstablished?.Invoke(true));
 			_mainThreadActions.Enqueue(() => ConnectionStatus = ConnectionStatus.IsConnected);
+
+			ModuledNetManager.AddModuledNetMessage(new("Connected to Server!"));
 		}
 
 		private void HandleConnectionDeniedPacket(byte[] packet)
@@ -390,6 +393,8 @@ namespace CENTIS.UnityModuledNet.Networking
 
 			_mainThreadActions.Enqueue(() => _onConnectionEstablished?.Invoke(false));
 			_mainThreadActions.Enqueue(() => Dispose());
+
+			ModuledNetManager.AddModuledNetMessage(new("Connection has been denied!"));
 		}
 
 		private void HandleConnectionClosedPacket(byte[] packet)
@@ -402,6 +407,8 @@ namespace CENTIS.UnityModuledNet.Networking
 				return;
 
 			_mainThreadActions.Enqueue(() => Dispose());
+
+			ModuledNetManager.AddModuledNetMessage(new("Connection was closed..."));
 		}
 
 		private void HandleClientDisconnectedPacket(byte[] packet)
@@ -413,11 +420,13 @@ namespace CENTIS.UnityModuledNet.Networking
 			if (!clientDisconnected.TryDeserialize())
 				return;
 
-			if (!_connectedClients.TryRemove(clientDisconnected.ClientID, out _))
+			if (!_connectedClients.TryRemove(clientDisconnected.ClientID, out ClientInformation client))
 				return;
 
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientDisconnected?.Invoke(clientDisconnected.ClientID));
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged.Invoke());
+
+			ModuledNetManager.AddModuledNetMessage(new($"Client {client} disconnected!"));
 		}
 
 		private void HandleSequencedPacket(ASequencedNetworkPacket packet)
@@ -529,6 +538,7 @@ namespace CENTIS.UnityModuledNet.Networking
 					{
 						_connectedClients.TryAdd(clientInfoPacket.ClientID, newClient);
 						_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(clientInfoPacket.ClientID));
+						ModuledNetManager.AddModuledNetMessage(new($"Client {newClient} connected!"));
 					}
 
 					_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());

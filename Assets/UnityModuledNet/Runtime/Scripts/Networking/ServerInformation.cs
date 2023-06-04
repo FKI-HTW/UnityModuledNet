@@ -41,6 +41,7 @@ namespace CENTIS.UnityModuledNet.Networking
     public class OpenServerInformation : ServerInformation
     {
         public byte NumberConnectedClients { get; private set; }
+        public bool IsServerFull => NumberConnectedClients >= MaxNumberConnectedClients;
 
         public OpenServerInformation(IPAddress ip, string servername, byte maxNumberConnectedClients, byte numberConnectedClients)
             : base(ip, servername, maxNumberConnectedClients)

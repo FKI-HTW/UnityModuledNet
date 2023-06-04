@@ -9,8 +9,6 @@ using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.ExceptionServices;
-using System.Text;
-using System.Reflection;
 using UnityEngine;
 using CENTIS.UnityModuledNet.Networking;
 using CENTIS.UnityModuledNet.Networking.Packets;
@@ -159,7 +157,7 @@ namespace CENTIS.UnityModuledNet.Managing
 			get => IsConnected && LocalClient != null && LocalClient.IsHost;
 		}
 
-		public static readonly List<ModuledNetMessage> SyncMessages = new();
+		public static readonly List<ModuledNetMessage> ModuledNetMessages = new();
 
 		#endregion
 
@@ -443,8 +441,7 @@ namespace CENTIS.UnityModuledNet.Managing
 				_discoveryThread = new(() => DiscoveryThread()) { IsBackground = true };
 				_discoveryThread.Start();
 
-				IsServerDiscoveryActive = true;
-				return true;
+				return IsServerDiscoveryActive = true;
 			}
 			catch (Exception ex)
 			{
@@ -474,8 +471,7 @@ namespace CENTIS.UnityModuledNet.Managing
 						ExceptionDispatchInfo.Capture(ex).Throw();
 						throw;
 				}
-				IsServerDiscoveryActive = false;
-				return false;
+				return IsServerDiscoveryActive = false;
 			}
 		}
 
@@ -527,11 +523,11 @@ namespace CENTIS.UnityModuledNet.Managing
 			_socket.DisconnectFromServer();
 		}
 
-		public static void AddSyncMessage(ModuledNetMessage message)
+		public static void AddModuledNetMessage(ModuledNetMessage message)
 		{
 			_mainThreadActions.Enqueue(() =>
 			{
-				SyncMessages.Add(message);
+				ModuledNetMessages.Add(message);
 				OnSyncMessageAdded?.Invoke();
 			});
 		}
