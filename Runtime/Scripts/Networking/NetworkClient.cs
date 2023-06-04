@@ -488,7 +488,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
 			// concatenate slices to complete packet and remove it from chunk buffer
 			List<byte> dataBytes = new();
-			for (ushort i = 1; i <= packet.NumberOfSlices; i++)
+			for (ushort i = 0; i < packet.NumberOfSlices; i++)
 			{
 				if (!bufferedChunk.TryGetValue(i, out DataPacket sliceData))
 					return;
@@ -576,30 +576,39 @@ namespace CENTIS.UnityModuledNet.Networking
 							// serialize with reliable sequence
 							{
 								_reliableLocalSequence++;
-								data = s.Serialize(_reliableLocalSequence);
-								_udpClient.Send(data, data.Length, new(_serverIP, _port));
-
 								if (s is DataPacket rd)
-								{   // invoke callback once it was send
+								{
 									if (rd.IsChunked)
-									{   // save slices in buffer in case of resends
-										_sendChunksBuffer.TryAdd((_reliableLocalSequence, rd.SliceNumber), data);
-										_ = ResendSliceData((_reliableLocalSequence, rd.SliceNumber));
-
-										if (rd.SliceNumber == rd.NumberOfSlices - 1)
-										{   // only invoke callback once all slices were send
-											rd.Callback?.Invoke(true);
+									{   // send slices individually
+										for (ushort i = 0; i < rd.NumberOfSlices; i++)
+										{
+											rd.SliceNumber = i;
+											data = s.Serialize(_reliableLocalSequence);
+											_udpClient.Send(data, data.Length, new(_serverIP, _port));
+											_sendChunksBuffer.TryAdd((_reliableLocalSequence, rd.SliceNumber), data);
+											_ = ResendSliceData((_reliableLocalSequence, rd.SliceNumber));
 										}
+										rd.Callback?.Invoke(true);
 										continue;
 									}
-									rd.Callback?.Invoke(true);
+									else
+									{   // send data packet as one
+										data = s.Serialize(_reliableLocalSequence);
+										_udpClient.Send(data, data.Length, new(_serverIP, _port));
+										_sendPacketsBuffer.TryAdd(_reliableLocalSequence, data);
+										_ = ResendPacketData(_reliableLocalSequence);
+										rd.Callback?.Invoke(true);
+										continue;
+									}
 								}
 
-								// save packets in buffer in case of resends
+								// send sequenced packet
+								data = s.Serialize(_reliableLocalSequence);
+								_udpClient.Send(data, data.Length, new(_serverIP, _port));
 								_sendPacketsBuffer.TryAdd(_reliableLocalSequence, data);
 								_ = ResendPacketData(_reliableLocalSequence);
+								continue;
 							}
-							break;
 					}
 				}
 				catch (Exception ex)
@@ -730,22 +739,6 @@ namespace CENTIS.UnityModuledNet.Networking
 			{
 				Debug.LogError($"Only Reliable Packets can be larger than the MTU ({mtu} Bytes)!");
 				dataCallback?.Invoke(false);
-				return;
-			}
-
-			if (data.Length > mtu)
-			{   // if data is larger than MTU split packet into slices and send individually
-				ushort numberOfSlices = (ushort)(data.Length % mtu == 0
-					? data.Length / mtu
-					: data.Length / mtu + 1);
-
-				for (ushort sliceNumber = 1; sliceNumber <= numberOfSlices; sliceNumber++)
-				{
-					int sliceSize = sliceNumber < numberOfSlices - 1 ? mtu : data.Length % mtu;
-					byte[] sliceData = new byte[sliceSize];
-					Array.Copy(data, sliceNumber * mtu, sliceData, 0, sliceSize);
-					_packetsToSend.Enqueue(new DataPacket(type, moduleID, sliceData, dataCallback, receiver, numberOfSlices, sliceNumber));
-				}
 				return;
 			}
 

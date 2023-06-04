@@ -11,7 +11,9 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 
 		public bool IsChunked { get; private set; }
 		public ushort NumberOfSlices { get; private set; }
-		public ushort SliceNumber { get; private set; }
+		public ushort SliceNumber { get; set; }
+
+		private int _mtu = ModuledNetSettings.GetOrCreateSettings().MTU;
 
 		public DataPacket(EPacketType type, byte[] moduleID, byte[] data, Action<bool> callback, byte? clientID)
 		{
@@ -21,23 +23,20 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 			Data = data;
 			Callback = callback;
 
-			IsChunked = false;
-			NumberOfSlices = 0;
-			SliceNumber = 0;
-		}
-
-		public DataPacket(EPacketType type, byte[] moduleID, byte[] data, Action<bool> callback, byte? clientID,
-			ushort numberOfSlices, ushort sliceNumber)
-		{
-			Type = type;
-			ClientID = clientID ?? 0;
-			ModuleID = moduleID;
-			Data = data;
-			Callback = callback;
-
-			IsChunked = true;
-			NumberOfSlices = numberOfSlices;
-			SliceNumber = sliceNumber;
+			if (data.Length > _mtu)
+			{   // if data is larger than MTU split packet into slices and send individually
+				IsChunked = true;
+				NumberOfSlices = (ushort)(data.Length % _mtu == 0
+					? data.Length / _mtu
+					: data.Length / _mtu + 1);
+				SliceNumber = 0;
+			}
+			else
+			{
+				IsChunked = false;
+				NumberOfSlices = 0;
+				SliceNumber = 0;
+			}
 		}
 
 		public DataPacket(EPacketType type, byte[] packet)
@@ -49,12 +48,14 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 		public override byte[] Serialize(ushort sequence)
 		{
 			int chunkedHeaderLength = IsChunked ? ModuledNetSettings.NUMBER_OF_SLICES + ModuledNetSettings.SLICE_NUMBER : 0;
-			byte[] bytes = new byte[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_ID_LENGTH + Data.Length];
+			int sliceSize = IsChunked ? (SliceNumber < NumberOfSlices - 1 ? _mtu : Data.Length % _mtu) : Data.Length;
+
+			byte[] bytes = new byte[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_ID_LENGTH + sliceSize];
 			bytes[ModuledNetSettings.CRC32_LENGTH] = (byte)Type;
 			Array.Copy(BitConverter.GetBytes(sequence), 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH, ModuledNetSettings.SEQUENCE_ID_LENGTH);
 			bytes[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength] = ClientID;
 			Array.Copy(ModuleID, 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH, ModuledNetSettings.MODULE_ID_LENGTH);
-			Array.Copy(Data, 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_ID_LENGTH, Data.Length);
+			Array.Copy(Data, SliceNumber * _mtu, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_ID_LENGTH, sliceSize);
 
 			if (IsChunked)
 			{
