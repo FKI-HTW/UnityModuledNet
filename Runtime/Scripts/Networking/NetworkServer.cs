@@ -494,8 +494,11 @@ namespace CENTIS.UnityModuledNet.Networking
 
 					// forward packet to all other clients before consuming
 					if (dataPacket.ClientID == 0)
+					{
 						foreach (ClientInformationSocket targetClient in _connectedClients.Values)
-							CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.IP, sender.ID);
+							if (targetClient.ID != sender.ID)
+								CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.IP, sender.ID);
+					}
 
 					// notify manager of received data, consuming the packet
 					_mainThreadActions.Enqueue(() => ModuledNetManager.DataReceived?.Invoke(dataPacket.ModuleID, sender.ID, dataPacket.Data));
