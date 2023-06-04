@@ -80,7 +80,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
 				ModuledNetManager.OnUpdate += Update;
 
-				ModuledNetManager.AddSyncMessage(new("Server has been opened!"));
+				ModuledNetManager.AddModuledNetMessage(new("Server has been opened!"));
 				ConnectionStatus = ConnectionStatus.IsConnected;
 				onConnectionEstablished?.Invoke(true);
 			}
@@ -176,7 +176,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			foreach (ClientInformationSocket client in _connectedClients.Values)
 				_udpClient.Send(data, data.Length, new(client.IP, _port));
 
-			ModuledNetManager.AddSyncMessage(new("Disconnected from Server!"));
+			ModuledNetManager.AddModuledNetMessage(new("Closed Server!"));
 			Dispose();
 		}
 
@@ -766,6 +766,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(newID));
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 
+			ModuledNetManager.AddModuledNetMessage(new($"Client {info} connected!"));
 			return newClient;
 		}
 
@@ -789,6 +790,8 @@ namespace CENTIS.UnityModuledNet.Networking
 			
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(clientID));
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
+
+			ModuledNetManager.AddModuledNetMessage(new($"Client {client} disconnected!"));
 
 			if (saveClient)
 			{

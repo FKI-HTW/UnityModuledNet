@@ -141,7 +141,7 @@ namespace CENTIS.UnityModuledNet
                 }
                 else
                 {
-                    // server client list
+                    // connected clients list
                     GUILayout.Label($"Current Server: {ModuledNetManager.CurrentServer?.Servername}");
                     _clientsViewPos = EditorGUILayout.BeginScrollView(_clientsViewPos, EditorStyles.helpBox, GUILayout.ExpandWidth(true), GUILayout.MaxHeight(150));
                     {
@@ -168,7 +168,7 @@ namespace CENTIS.UnityModuledNet
                     }
                     EditorGUILayout.EndScrollView();
 
-                    if (GUILayout.Button(new GUIContent("Leave Server")))
+                    if (GUILayout.Button(new GUIContent(ModuledNetManager.IsHost ? "Close Server" : "Leave Server")))
                         ModuledNetManager.DisconnectFromServer();
                 }
                 EditorGUILayout.Space();
@@ -176,7 +176,7 @@ namespace CENTIS.UnityModuledNet
 
                 // sync messages
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label($"Sync Messages:");
+                GUILayout.Label($"Network Messages:");
                 GUILayout.FlexibleSpace();
                 _isAutoscroll = EditorGUILayout.Toggle(new GUIContent(" ", "Is Autoscrolling Messages"), _isAutoscroll);
                 EditorGUILayout.EndHorizontal();
@@ -184,9 +184,9 @@ namespace CENTIS.UnityModuledNet
                     EditorStyles.helpBox, GUILayout.ExpandWidth(true), GUILayout.MaxHeight(200));
 				{
                     Color defaultColor = _style.normal.textColor;
-                    for (int i = 0; i < ModuledNetManager.SyncMessages.Count; i++)
+                    for (int i = 0; i < ModuledNetManager.ModuledNetMessages.Count; i++)
                     {
-                        ModuledNetMessage message = ModuledNetManager.SyncMessages.ElementAt(i);
+                        ModuledNetMessage message = ModuledNetManager.ModuledNetMessages.ElementAt(i);
                         EditorGUILayout.BeginHorizontal(GetScrollviewRowStyle(_scrollViewColors[i % 2]));
                         {
                             switch (message.Severity)
@@ -227,7 +227,7 @@ namespace CENTIS.UnityModuledNet
         private void AddSyncMessage()
 		{
             if (_isAutoscroll) 
-                _messagesViewPos = new(_messagesViewPos.x, ModuledNetManager.SyncMessages.Count * ROW_HEIGHT);
+                _messagesViewPos = new(_messagesViewPos.x, ModuledNetManager.ModuledNetMessages.Count * ROW_HEIGHT);
             Repaint();
         }
     }
