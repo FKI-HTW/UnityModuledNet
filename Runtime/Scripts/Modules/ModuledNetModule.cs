@@ -1,25 +1,31 @@
 using System;
+using System.Text;
 using UnityEngine;
 using CENTIS.UnityModuledNet.Managing;
 
 namespace CENTIS.UnityModuledNet.Modules
 {
-    public abstract class ModuledNetModule
+    public abstract class ModuledNetModule : IDisposable
     {
-		private uint _moduleHash;
-		protected uint ModuleHash
-		{
-			get => _moduleHash;
-			private set => _moduleHash = value;
-		}
+		/// <summary>
+		/// The ID used to differentiate between different Modules. This ID can't be longer than 30 characters and must use 
+		/// ASCII Encoding.
+		/// </summary>
+		public abstract string ModuleID { get; }
+		
+		public byte[] ModuleIDBytes { get; private set; }
+		
+		public bool IsModuleRegistered => ModuledNetManager.IsModuleRegistered(ModuleIDBytes);
 
-		public bool IsModuleRegistered
+		public ModuledNetModule()
 		{
-			get => ModuledNetManager.IsModuleRegistered(ModuleHash);
-		}
+			if (ModuleID.Length > ModuledNetSettings.MODULE_ID_LENGTH || Encoding.UTF8.GetByteCount(ModuleID) != ModuleID.Length)
+			{
+				throw new Exception("The Module ID has to be shorter than 30 characters and use ASCII Encoding!");
+			}
 
-        public ModuledNetModule()
-		{
+			ModuleIDBytes = Encoding.ASCII.GetBytes(ModuleID.PadRight(ModuledNetSettings.MODULE_ID_LENGTH));
+
 			if (!RegisterModule())
 			{
 				Debug.LogError("The Module couldn't be registered!");
@@ -29,6 +35,15 @@ namespace CENTIS.UnityModuledNet.Modules
 			ModuledNetManager.OnAwake += Awake;
 			ModuledNetManager.OnStart += Start;
 			ModuledNetManager.OnUpdate += Update;
+			ModuledNetManager.OnServerDiscoveryActivated += ServerDiscoveryActivated;
+			ModuledNetManager.OnServerDiscoveryDeactivated += ServerDiscoveryDeactivated;
+			ModuledNetManager.OnConnected += Connected;
+			ModuledNetManager.OnConnecting += Connecting;
+			ModuledNetManager.OnDisconnected += Disconnected;
+			ModuledNetManager.OnClientConnected += ClientConnected;
+			ModuledNetManager.OnClientDisconnected += ClientDisconnected;
+			ModuledNetManager.OnConnectedClientListChanged += ConnectedClientListChanged;
+			ModuledNetManager.OnServerListChanged += ServerListChanged;
 		}
 
 		~ModuledNetModule()
@@ -36,6 +51,10 @@ namespace CENTIS.UnityModuledNet.Modules
 			Dispose(false);
 		}
 
+		/// <summary>
+		/// IDisposable implementation for the Module. Can be overriden in child with custom Dispose method.
+		/// If overriden, it is recommended to call base.Dispose() to ensure event listeners and the module are unregistered.
+		/// </summary>
 		public virtual void Dispose()
 		{
 			Dispose(true);
@@ -48,30 +67,54 @@ namespace CENTIS.UnityModuledNet.Modules
 				ModuledNetManager.OnAwake -= Awake;
 				ModuledNetManager.OnStart -= Start;
 				ModuledNetManager.OnUpdate -= Update;
+				ModuledNetManager.OnServerDiscoveryActivated -= ServerDiscoveryActivated;
+				ModuledNetManager.OnServerDiscoveryDeactivated -= ServerDiscoveryDeactivated;
+				ModuledNetManager.OnConnected -= Connected;
+				ModuledNetManager.OnConnecting -= Connecting;
+				ModuledNetManager.OnDisconnected -= Disconnected;
+				ModuledNetManager.OnClientConnected -= ClientConnected;
+				ModuledNetManager.OnClientDisconnected -= ClientDisconnected;
+				ModuledNetManager.OnConnectedClientListChanged -= ConnectedClientListChanged;
+				ModuledNetManager.OnServerListChanged -= ServerListChanged;
 			}
 
 			UnregisterModule();
 		}
 
+		/// <summary>
+		/// Unregisters the Module if it is already registered.
+		/// </summary>
 		public void UnregisterModule()
 		{
 			if (IsModuleRegistered)
-				ModuledNetManager.UnregisterModule(ModuleHash);
+				ModuledNetManager.UnregisterModule(ModuleIDBytes);
 		}
 
+		/// <summary>
+		/// Registers the Module with the ModuledNet Manager.
+		/// </summary>
+		/// <returns><see langword="true"/> if the module was successfully registered or was already registered</returns>
 		public bool RegisterModule()
 		{
 			if (!IsModuleRegistered)
-				ModuleHash = ModuledNetManager.RegisterModule(this);
-			return ModuleHash != 0;
+				return ModuledNetManager.RegisterModule(this);
+			return IsModuleRegistered;
 		}
 
 		public virtual void Awake() { }
 		public virtual void Start() { }
 		public virtual void Update() { }
+		public virtual void ServerDiscoveryActivated() { }
+		public virtual void ServerDiscoveryDeactivated() { }
+		public virtual void Connected() { }
+		public virtual void Connecting() { }
+		public virtual void Disconnected() { }
+		public virtual void ClientConnected(byte clientID) { }
+		public virtual void ClientDisconnected(byte clientID) { }
+		public virtual void ConnectedClientListChanged() { }
+		public virtual void ServerListChanged() { }
 
         public abstract void OnReceiveData(byte sender, byte[] data);
-
         public abstract void SendData(byte[] data, Action<bool> onDataSend, byte? receiver = null);
     }
 
@@ -88,7 +131,7 @@ namespace CENTIS.UnityModuledNet.Modules
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (ModuledNetManager.IsConnected && IsModuleRegistered)
-				ModuledNetManager.SendDataReliable(ModuleHash, data, onDataSend, receiver);
+				ModuledNetManager.SendDataReliable(ModuleIDBytes, data, onDataSend, receiver);
 		}
 	}
 
@@ -105,7 +148,7 @@ namespace CENTIS.UnityModuledNet.Modules
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (ModuledNetManager.IsConnected && IsModuleRegistered)
-				ModuledNetManager.SendDataReliableUnordered(ModuleHash, data, onDataSend, receiver);
+				ModuledNetManager.SendDataReliableUnordered(ModuleIDBytes, data, onDataSend, receiver);
 		}
 	}
 
@@ -124,7 +167,7 @@ namespace CENTIS.UnityModuledNet.Modules
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (ModuledNetManager.IsConnected && IsModuleRegistered)
-				ModuledNetManager.SendDataUnreliable(ModuleHash, data, onDataSend, receiver);
+				ModuledNetManager.SendDataUnreliable(ModuleIDBytes, data, onDataSend, receiver);
 		}
 	}
 
@@ -143,7 +186,7 @@ namespace CENTIS.UnityModuledNet.Modules
 		public override void SendData(byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (ModuledNetManager.IsConnected && IsModuleRegistered)
-				ModuledNetManager.SendDataUnreliableUnordered(ModuleHash, data, onDataSend, receiver);
+				ModuledNetManager.SendDataUnreliableUnordered(ModuleIDBytes, data, onDataSend, receiver);
 		}
 	}
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Net;
@@ -14,6 +15,7 @@ using UnityEngine;
 using CENTIS.UnityModuledNet.Networking;
 using CENTIS.UnityModuledNet.Networking.Packets;
 using CENTIS.UnityModuledNet.Modules;
+using CENTIS.UnityModuledNet.Serialiser;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -163,7 +165,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
 		#region internal fields
 
-		internal static Action<uint, byte, byte[]> DataReceived;
+		internal static Action<byte[], byte, byte[]> DataReceived;
 
 		#endregion
 
@@ -175,7 +177,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
 		private readonly static ConcurrentDictionary<IPAddress, OpenServerInformation> _openServers = new();
 
-		private readonly static ConcurrentDictionary<uint, ModuledNetModule> _registeredModules = new();
+		private readonly static ConcurrentDictionary<byte[], ModuledNetModule> _registeredModules = new(new ByteArrayComparer());
 
 		private readonly static ConcurrentQueue<Action> _mainThreadActions = new();
 
@@ -332,9 +334,9 @@ namespace CENTIS.UnityModuledNet.Managing
 			}
 		}
 
-		private static void OnDataReceived(uint moduleHash, byte client, byte[] data)
+		private static void OnDataReceived(byte[] moduleID, byte client, byte[] data)
 		{
-			if (_registeredModules.TryGetValue(moduleHash, out ModuledNetModule module))
+			if (_registeredModules.TryGetValue(moduleID, out ModuledNetModule module))
 			{
 				module.OnReceiveData(client, data);
 			}
@@ -344,74 +346,58 @@ namespace CENTIS.UnityModuledNet.Managing
 
 		#region internal methods
 
-		internal static uint RegisterModule(ModuledNetModule module)
+		internal static bool RegisterModule(ModuledNetModule module)
 		{
-			string moduleValues = module.GetType().Name;
-			BindingFlags flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
-			foreach (var f in module.GetType().GetMembers(flags))
-			{
-				if (f.MemberType == MemberTypes.Field || (f.MemberType & MemberTypes.Property) != 0)
-					moduleValues += f.Name;
-
-				if (f is FieldInfo fi)
-					moduleValues += fi.FieldType.Name;
-
-				if (f.MemberType == MemberTypes.Method)
-					moduleValues += f.Name;
-			}
-			uint hash = CRC32Hash.CRC32Bytes(Encoding.ASCII.GetBytes(moduleValues));
-
-			if (_registeredModules.TryGetValue(hash, out _))
+			if (IsModuleRegistered(module.ModuleIDBytes))
 			{
 				Debug.LogError("Only one Module of each type can be registered!");
-				return 0;
+				return false;
 			}
 
-			_registeredModules.TryAdd(hash, module);
-			return hash;
+			return _registeredModules.TryAdd(module.ModuleIDBytes, module);
 		}
 
-		internal static void UnregisterModule(uint moduleHash)
+		internal static void UnregisterModule(byte[] moduleID)
 		{
-			if (!_registeredModules.TryRemove(moduleHash, out _))
-				Debug.LogWarning($"The given Module could not be found!");
+			if (!_registeredModules.TryRemove(moduleID, out _))
+				Debug.LogWarning($"The given Module was already unregistered!");
 		}
 
-		internal static bool IsModuleRegistered(uint moduleHash)
+		internal static bool IsModuleRegistered(byte[] moduleID)
 		{
-			return _registeredModules.TryGetValue(moduleHash, out _);
+			return _registeredModules.TryGetValue(moduleID, out _);
 		}
 
-		internal static void SendDataReliable(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
-		{
-			if (!IsEligibleForSending(onDataSend))
-				return;
-
-			_socket.SendDataReliable(moduleHash, data, onDataSend, receiver);
-		}
-
-		internal static void SendDataReliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
+		internal static void SendDataReliable(byte[] moduleID, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (!IsEligibleForSending(onDataSend))
 				return;
 
-			_socket.SendDataReliableUnordered(moduleHash, data, onDataSend, receiver);
+			_socket.SendDataReliable(moduleID, data, onDataSend, receiver);
 		}
 
-		internal static void SendDataUnreliable(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
+		internal static void SendDataReliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (!IsEligibleForSending(onDataSend))
 				return;
 
-			_socket.SendDataUnreliable(moduleHash, data, onDataSend, receiver);
+			_socket.SendDataReliableUnordered(moduleID, data, onDataSend, receiver);
 		}
 
-		internal static void SendDataUnreliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
+		internal static void SendDataUnreliable(byte[] moduleID, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
 		{
 			if (!IsEligibleForSending(onDataSend))
 				return;
 
-			_socket.SendDataUnreliableUnordered(moduleHash, data, onDataSend, receiver);
+			_socket.SendDataUnreliable(moduleID, data, onDataSend, receiver);
+		}
+
+		internal static void SendDataUnreliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
+		{
+			if (!IsEligibleForSending(onDataSend))
+				return;
+
+			_socket.SendDataUnreliableUnordered(moduleID, data, onDataSend, receiver);
 		}
 
 		#endregion

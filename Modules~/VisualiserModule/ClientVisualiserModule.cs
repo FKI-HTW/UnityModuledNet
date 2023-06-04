@@ -13,9 +13,10 @@ namespace CENTIS.UnityModuledNet.Modules
 {
     public class ClientVisualiserModule : UnreliableModule
     {
-		private readonly Dictionary<byte, ClientVisualiser> _visualisers = new();
+		public override string ModuleID => "ClientVisualiserModule";
 
 		private const string PARENT_NAME = "ClientVisualiser Parent";
+		private readonly Dictionary<byte, ClientVisualiser> _visualisers = new();
 
 		private Vector3 _lastCameraPosition;
 		private Vector3 _lastCameraRotation;
@@ -27,23 +28,19 @@ namespace CENTIS.UnityModuledNet.Modules
 
 		public ClientVisualiserModule()
 		{
+			ModuledNetManager.OnConnected += CreateVisualiserParent;
+			ModuledNetManager.OnDisconnected += DestroyVisualiserParent;
 			ModuledNetManager.OnClientDisconnected += RemoveConnectedClient;
-
-			GameObject parent = GameObject.Find(PARENT_NAME);
-			_visualiserParent = parent == null ? new GameObject().transform : parent.transform;
-			_visualiserParent.name = PARENT_NAME;
-			// TODO : cant hide the object if it's not automatically deleted, cuz a user won't be able to delete it neither
-			//_visualiserParent.gameObject.hideFlags = HideFlags.HideInHierarchy;
 		}
 
 		public override void Dispose()
 		{
+			ModuledNetManager.OnConnected -= CreateVisualiserParent;
+			ModuledNetManager.OnDisconnected -= DestroyVisualiserParent;
 			ModuledNetManager.OnClientDisconnected -= RemoveConnectedClient;
-#if UNITY_EDITOR
-			GameObject.DestroyImmediate(_visualiserParent.gameObject);
-#else
-			GameObject.Destroy(_visualiserParent.gameObject);
-#endif
+
+			if (_visualiserParent != null)
+				DestroyVisualiserParent();
 			base.Dispose();
 		}
 
@@ -59,11 +56,23 @@ namespace CENTIS.UnityModuledNet.Modules
 #endif
 		}
 
-		#endregion
+		private void CreateVisualiserParent()
+		{
+			GameObject parent = GameObject.Find(PARENT_NAME);
+			_visualiserParent = parent == null ? new GameObject().transform : parent.transform;
+			_visualiserParent.name = PARENT_NAME;
+		}
 
-		#region receive data
+		private void DestroyVisualiserParent()
+		{
+#if UNITY_EDITOR
+			GameObject.DestroyImmediate(_visualiserParent?.gameObject);
+#else
+			GameObject.Destroy(_visualiserParent?.gameObject);
+#endif
+		}
 
-		public void RemoveConnectedClient(byte id)
+		private void RemoveConnectedClient(byte id)
 		{
 			if (!_visualisers.Remove(id, out ClientVisualiser visualiser))
 				return;
@@ -74,6 +83,10 @@ namespace CENTIS.UnityModuledNet.Modules
 			GameObject.Destroy(visualiser.gameObject);
 #endif
 		}
+
+		#endregion
+
+		#region receive data
 
 		public override void OnReceiveData(byte sender, byte[] data)
 		{

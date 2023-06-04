@@ -67,7 +67,6 @@ namespace CENTIS.UnityModuledNet
                 _mtu = value;
             }
         }
-        // TODO : calculate rtt
         private int _rtt = 200;
         public int RTT
         {
@@ -93,7 +92,7 @@ namespace CENTIS.UnityModuledNet
         internal const int CRC32_LENGTH = 4;                // checksum and contains protocol and server id
         internal const int PACKET_TYPE_LENGTH = 1;          // id of the packet type
         internal const int SEQUENCE_ID_LENGTH = 2;          // sequence id for preventing old updates to be consumed
-        internal const int MODULE_HASH_LENGTH = 4;          // flag containing the hash of the used module
+        internal const int MODULE_ID_LENGTH = 30;          // flag containing the hash of the used module
         internal const int NUMBER_OF_SLICES = 2;            // flag showing the number of packets the chunk consists of
         internal const int SLICE_NUMBER = NUMBER_OF_SLICES; // number of the current slice
         internal const int NUMBER_CLIENTS_LENGTH = 1;       // (max-) number of clients

@@ -6,18 +6,18 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 	{
 		public byte ClientID { get; private set; }
 		public Action<bool> Callback { get; private set; }
-		public uint ModuleHash { get; private set; }
+		public byte[] ModuleID { get; private set; }
 		public byte[] Data { get; private set; }
 
 		public bool IsChunked { get; private set; }
 		public ushort NumberOfSlices { get; private set; }
 		public ushort SliceNumber { get; private set; }
 
-		public DataPacket(EPacketType type, uint moduleHash, byte[] data, Action<bool> callback, byte? clientID)
+		public DataPacket(EPacketType type, byte[] moduleID, byte[] data, Action<bool> callback, byte? clientID)
 		{
 			Type = type;
 			ClientID = clientID ?? 0;
-			ModuleHash = moduleHash;
+			ModuleID = moduleID;
 			Data = data;
 			Callback = callback;
 
@@ -26,12 +26,12 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 			SliceNumber = 0;
 		}
 
-		public DataPacket(EPacketType type, uint moduleHash, byte[] data, Action<bool> callback, byte? clientID,
+		public DataPacket(EPacketType type, byte[] moduleID, byte[] data, Action<bool> callback, byte? clientID,
 			ushort numberOfSlices, ushort sliceNumber)
 		{
 			Type = type;
 			ClientID = clientID ?? 0;
-			ModuleHash = moduleHash;
+			ModuleID = moduleID;
 			Data = data;
 			Callback = callback;
 
@@ -49,12 +49,12 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 		public override byte[] Serialize(ushort sequence)
 		{
 			int chunkedHeaderLength = IsChunked ? ModuledNetSettings.NUMBER_OF_SLICES + ModuledNetSettings.SLICE_NUMBER : 0;
-			byte[] bytes = new byte[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_HASH_LENGTH + Data.Length];
+			byte[] bytes = new byte[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_ID_LENGTH + Data.Length];
 			bytes[ModuledNetSettings.CRC32_LENGTH] = (byte)Type;
 			Array.Copy(BitConverter.GetBytes(sequence), 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH, ModuledNetSettings.SEQUENCE_ID_LENGTH);
 			bytes[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength] = ClientID;
-			Array.Copy(BitConverter.GetBytes(ModuleHash), 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH, ModuledNetSettings.MODULE_HASH_LENGTH);
-			Array.Copy(Data, 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_HASH_LENGTH, Data.Length);
+			Array.Copy(ModuleID, 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH, ModuledNetSettings.MODULE_ID_LENGTH);
+			Array.Copy(Data, 0, bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_ID_LENGTH, Data.Length);
 
 			if (IsChunked)
 			{
@@ -82,8 +82,8 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 
 				Sequence = BitConverter.ToUInt16(GetBytesFromArray(Bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH, ModuledNetSettings.SEQUENCE_ID_LENGTH));
 				ClientID = Bytes[ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength];
-				ModuleHash = BitConverter.ToUInt32(GetBytesFromArray(Bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH, ModuledNetSettings.MODULE_HASH_LENGTH));
-				Data = GetBytesFromArray(Bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_HASH_LENGTH);
+				ModuleID = GetBytesFromArray(Bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH, ModuledNetSettings.MODULE_ID_LENGTH);
+				Data = GetBytesFromArray(Bytes, ModuledNetSettings.CRC32_LENGTH + ModuledNetSettings.PACKET_TYPE_LENGTH + ModuledNetSettings.SEQUENCE_ID_LENGTH + chunkedHeaderLength + ModuledNetSettings.CLIENT_ID_LENGTH + ModuledNetSettings.MODULE_ID_LENGTH);
 
 				if (IsChunked)
 				{
