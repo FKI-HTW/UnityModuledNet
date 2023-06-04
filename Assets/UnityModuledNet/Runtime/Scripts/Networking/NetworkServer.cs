@@ -180,36 +180,36 @@ namespace CENTIS.UnityModuledNet.Networking
 			Dispose();
 		}
 
-		public override void SendDataReliable(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendDataReliable(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null)
 		{
 			if (!CheckIfEligibleForSending(onDataSend, receiver))
 				return;
 
-			CreateDataSenderPackets(EPacketType.ReliableData, moduleHash, data, onDataSend, receiver);
+			CreateDataSenderPackets(EPacketType.ReliableData, moduleID, data, onDataSend, receiver);
 		}
 
-		public override void SendDataReliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendDataReliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null)
 		{
 			if (!CheckIfEligibleForSending(onDataSend, receiver))
 				return;
 
-			CreateDataSenderPackets(EPacketType.ReliableUnorderedData, moduleHash, data, onDataSend, receiver);
+			CreateDataSenderPackets(EPacketType.ReliableUnorderedData, moduleID, data, onDataSend, receiver);
 		}
 
-		public override void SendDataUnreliable(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendDataUnreliable(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null)
 		{
 			if (!CheckIfEligibleForSending(onDataSend, receiver))
 				return;
 
-			CreateDataSenderPackets(EPacketType.UnreliableData, moduleHash, data, onDataSend, receiver);
+			CreateDataSenderPackets(EPacketType.UnreliableData, moduleID, data, onDataSend, receiver);
 		}
 
-		public override void SendDataUnreliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null)
+		public override void SendDataUnreliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null)
 		{
 			if (!CheckIfEligibleForSending(onDataSend, receiver))
 				return;
 
-			CreateDataSenderPackets(EPacketType.UnreliableUnorderedData, moduleHash, data, onDataSend, receiver);
+			CreateDataSenderPackets(EPacketType.UnreliableUnorderedData, moduleID, data, onDataSend, receiver);
 		}
 
 		#endregion
@@ -449,7 +449,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				dataBytes.AddRange(sliceData.Data);
 			}
 			byte[] data = dataBytes.ToArray();
-			DataPacket dataPacket = new(packet.Type, packet.ModuleHash, data, null, sender.ID);
+			DataPacket dataPacket = new(packet.Type, packet.ModuleID, data, null, sender.ID);
 			sender.ReceivedChunksBuffer.TryRemove(packet.Sequence, out _);
 
 			if (!IsNextPacket(packet.Sequence, sender.ReliableRemoteSequence) && !IsUnorderedSequence(packet.Type))
@@ -471,7 +471,7 @@ namespace CENTIS.UnityModuledNet.Networking
 					if (dataPacket.ClientID > 1)
 					{   // forward packet to specified client
 						if (GetClientById(dataPacket.ClientID, out ClientInformationSocket targetClient))
-							CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleHash, dataPacket.Data, null, targetClient.IP, sender.ID);
+							CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.IP, sender.ID);
 						else
 							_packetsToSend.Enqueue((sender.IP, new ClientDisconnectedPacket(dataPacket.ClientID)));
 						return;
@@ -480,10 +480,10 @@ namespace CENTIS.UnityModuledNet.Networking
 					// forward packet to all other clients before consuming
 					if (dataPacket.ClientID == 0)
 						foreach (ClientInformationSocket targetClient in _connectedClients.Values)
-							CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleHash, dataPacket.Data, null, targetClient.IP, sender.ID);
+							CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.IP, sender.ID);
 
 					// notify manager of received data, consuming the packet
-					_mainThreadActions.Enqueue(() => ModuledNetManager.DataReceived?.Invoke(dataPacket.ModuleHash, sender.ID, dataPacket.Data));
+					_mainThreadActions.Enqueue(() => ModuledNetManager.DataReceived?.Invoke(dataPacket.ModuleID, sender.ID, dataPacket.Data));
 					break;
 				case ClientInfoPacket clientInfoPacket:
 					sender.Username = clientInfoPacket.Username;
@@ -803,19 +803,19 @@ namespace CENTIS.UnityModuledNet.Networking
 		/// <param name="data"></param>
 		/// <param name="dataCallback"></param>
 		/// <param name="receiver"></param>
-		private void CreateDataSenderPackets(EPacketType type, uint moduleHash, byte[] data, Action<bool> dataCallback, byte? receiver = null)
+		private void CreateDataSenderPackets(EPacketType type, byte[] moduleID, byte[] data, Action<bool> dataCallback, byte? receiver = null)
 		{
 			if (receiver != null)
 			{
 				if (GetClientById((byte)receiver, out ClientInformationSocket client))
-					CreateDataSenderPackets(type, moduleHash, data, dataCallback, client.IP, 1);
+					CreateDataSenderPackets(type, moduleID, data, dataCallback, client.IP, 1);
 				else
 					dataCallback?.Invoke(false);
 				return;
 			}
 
 			foreach (ClientInformationSocket client in _connectedClients.Values)
-				CreateDataSenderPackets(type, moduleHash, data, dataCallback, client.IP, 1);
+				CreateDataSenderPackets(type, moduleID, data, dataCallback, client.IP, 1);
 		}
 
 		/// <summary>
@@ -827,7 +827,7 @@ namespace CENTIS.UnityModuledNet.Networking
 		/// <param name="dataCallback"></param>
 		/// <param name="receiver"></param>
 		/// <param name="sender"></param>
-		private void CreateDataSenderPackets(EPacketType type, uint moduleHash, byte[] data, Action<bool> dataCallback, IPAddress receiver, byte sender)
+		private void CreateDataSenderPackets(EPacketType type, byte[] moduleID, byte[] data, Action<bool> dataCallback, IPAddress receiver, byte sender)
 		{
 			if (!IsDataPacket(type))
 				throw new Exception("This function only supports Data Packets!");
@@ -851,12 +851,12 @@ namespace CENTIS.UnityModuledNet.Networking
 					int sliceSize = sliceNumber < numberOfSlices - 1 ? mtu : data.Length % mtu;
 					byte[] sliceData = new byte[sliceSize];
 					Array.Copy(data, sliceNumber * mtu, sliceData, 0, sliceSize);
-					_packetsToSend.Enqueue((receiver, new DataPacket(type, moduleHash, sliceData, dataCallback, sender, numberOfSlices, sliceNumber)));
+					_packetsToSend.Enqueue((receiver, new DataPacket(type, moduleID, sliceData, dataCallback, sender, numberOfSlices, sliceNumber)));
 				}
 				return;
 			}
 
-			_packetsToSend.Enqueue((receiver, new DataPacket(type, moduleHash, data, dataCallback, sender)));
+			_packetsToSend.Enqueue((receiver, new DataPacket(type, moduleID, data, dataCallback, sender)));
 		}
 
 		private static bool CompareByteArrays(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)

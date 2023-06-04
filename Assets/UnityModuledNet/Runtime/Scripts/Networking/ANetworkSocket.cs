@@ -92,13 +92,13 @@ namespace CENTIS.UnityModuledNet.Networking
 
 		public abstract void DisconnectFromServer();
 
-		public abstract void SendDataReliable(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null);
+		public abstract void SendDataReliable(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null);
 
-		public abstract void SendDataReliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null);
+		public abstract void SendDataReliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null);
 
-		public abstract void SendDataUnreliable(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null);
+		public abstract void SendDataUnreliable(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null);
 
-		public abstract void SendDataUnreliableUnordered(uint moduleHash, byte[] data, Action<bool> onDataSend, byte? receiver = null);
+		public abstract void SendDataUnreliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend, byte? receiver = null);
 
 		#endregion
 
