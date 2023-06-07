@@ -47,9 +47,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ce4dcb7e7730494a97f8f1e409b9485, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  renderer: {fileID: 4869260426975519346}
-  usernameObject: {fileID: 2007285820905503156}
-  material: {fileID: 2100000, guid: ff1be6150e4251c4183b52b319d69d3c, type: 2}
+  _renderer: {fileID: 4869260426975519346}
+  _usernameObject: {fileID: 2007285820905503156}
 --- !u!33 &518992937886470012
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -77,8 +76,7 @@ MeshRenderer:
   m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: ff1be6150e4251c4183b52b319d69d3c, type: 2}
+  m_Materials: []
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
