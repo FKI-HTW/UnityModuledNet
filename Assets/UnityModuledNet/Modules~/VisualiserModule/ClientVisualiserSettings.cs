@@ -12,18 +12,29 @@ namespace CENTIS.UnityModuledNet.Modules
 #endif
     public class ClientVisualiserSettings : ModuleSettings
     {
-        public static ClientVisualiserSettings Settings;
+        private static ClientVisualiserSettings _settings;
+
+        public static ClientVisualiserSettings Settings
+		{
+			get
+			{
+                if (_settings == null)
+                    _settings = ModuledNetSettings.GetOrCreateSettings<ClientVisualiserSettings>("ClientVisualiser");
+                return _settings;
+			}
+		}
 
         protected override string SettingsName => "ClientVisualiserSettings";
 
         public int ClientVisualiserDelay = 100;
         public ClientVisualiser ClientVisualiser;
+        public Material ClientVisualiserMaterial;
 
         static ClientVisualiserSettings()
         {
 #if UNITY_EDITOR
             AssemblyReloadEvents.afterAssemblyReload += () =>
-                Settings = ModuledNetSettings.GetOrCreateSettings<ClientVisualiserSettings>("ClientVisualiser");
+                _settings = ModuledNetSettings.GetOrCreateSettings<ClientVisualiserSettings>("ClientVisualiser");
 #endif
         }
 
@@ -31,7 +42,8 @@ namespace CENTIS.UnityModuledNet.Modules
 		{
 #if UNITY_EDITOR
             Settings.ClientVisualiserDelay = EditorGUILayout.IntField("ClientVisualiser Delay:", Settings.ClientVisualiserDelay);
-            Settings.ClientVisualiser = (ClientVisualiser)EditorGUILayout.ObjectField("Client Visualiser Prefab:", Settings.ClientVisualiser, typeof(ClientVisualiser), false);
+            Settings.ClientVisualiser = (ClientVisualiser)EditorGUILayout.ObjectField("ClientVisualiser Prefab:", Settings.ClientVisualiser, typeof(ClientVisualiser), false);
+            Settings.ClientVisualiserMaterial = (Material)EditorGUILayout.ObjectField("ClientVisualiser Material:", Settings.ClientVisualiserMaterial, typeof(Material), false);
 #endif
         }
     }
