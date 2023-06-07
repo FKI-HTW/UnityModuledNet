@@ -8,13 +8,13 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 
 		public ClientDisconnectedPacket(byte clientID)
 		{
-			Type = EPacketType.ConnectionAccepted;
+			Type = EPacketType.ClientDisconnected;
 			ClientID = clientID;
 		}
 
 		public ClientDisconnectedPacket(byte[] packet)
 		{
-			Type = EPacketType.ChallengeAnswer;
+			Type = EPacketType.ClientDisconnected;
 			Bytes = packet;
 		}
 
