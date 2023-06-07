@@ -470,7 +470,7 @@ namespace CENTIS.UnityModuledNet.Networking
 				dataBytes.AddRange(sliceData.Data);
 			}
 			byte[] data = dataBytes.ToArray();
-			DataPacket dataPacket = new(packet.Type, packet.ModuleID, data, null, sender.ID);
+			DataPacket dataPacket = new(packet.Type, packet.ModuleID, data, null, packet.ClientID);
 			sender.ReceivedChunksBuffer.TryRemove(packet.Sequence, out _);
 
 			if (!IsNextPacket(packet.Sequence, sender.ReliableRemoteSequence) && !IsUnorderedSequence(packet.Type))
