@@ -5,19 +5,22 @@ namespace CENTIS.UnityModuledNet.Modules
     [System.Serializable]
     public class ClientVisualiser : MonoBehaviour
     {
-        [SerializeField] private new Renderer renderer;
-        [SerializeField] private TMPro.TMP_Text usernameObject;
-        [SerializeField] private Material material;
+        [SerializeField] private Renderer _renderer;
+        [SerializeField] private TMPro.TMP_Text _usernameObject;
+        
+        private Material _material;
 
         public void UpdateVisualiser(byte id, string username, Color color)
 	    {
             name = $"{id}#{username}";
-            usernameObject.text = username;
-            usernameObject.color = color;
-            if (material == null)
-                material = new(renderer.sharedMaterial);
-            material.SetColor("_Color", color);
-            renderer.sharedMaterial = material;
+            _usernameObject.text = username;
+            _usernameObject.color = color;
+            if (_material == null)
+			{
+                _material = Instantiate(ClientVisualiserSettings.Settings.ClientVisualiserMaterial) as Material;
+                _renderer.material = _material;
+			}
+            _material.SetColor("_Color", color);
         }
     }
 }
