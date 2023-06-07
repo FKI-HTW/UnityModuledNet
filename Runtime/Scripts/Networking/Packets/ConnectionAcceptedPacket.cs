@@ -19,7 +19,7 @@ namespace CENTIS.UnityModuledNet.Networking.Packets
 
 		public ConnectionAcceptedPacket(byte[] packet)
 		{
-			Type = EPacketType.ChallengeAnswer;
+			Type = EPacketType.ConnectionAccepted;
 			Bytes = packet;
 		}
 

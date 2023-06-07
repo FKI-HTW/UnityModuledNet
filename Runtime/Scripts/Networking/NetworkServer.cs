@@ -247,7 +247,7 @@ namespace CENTIS.UnityModuledNet.Networking
 							HandleChallengeAnswerPacket(sender, receivedBytes);
 							break;
 						case EPacketType.ConnectionClosed:
-							HandleClientDisconnectedPacket(sender, receivedBytes);
+							HandleConnectionClosedPacket(sender, receivedBytes);
 							break;
 						case EPacketType.ACK:
 							{
@@ -365,16 +365,22 @@ namespace CENTIS.UnityModuledNet.Networking
 			AddClient(sender, challengeAnswer.Username, challengeAnswer.Color);
 		}
 
-		private void HandleClientDisconnectedPacket(IPAddress sender, byte[] packet)
+		private void HandleConnectionClosedPacket(IPAddress sender, byte[] packet)
 		{
-			ClientDisconnectedPacket clientDisconnected = new(packet);
-			if (!clientDisconnected.TryDeserialize())
+			ConnectionClosedPacket connectionClosed = new(packet);
+			if (!connectionClosed.TryDeserialize())
 				return;
 
 			if (!_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
 				return;
 
-			RemoveClient(client.ID, true);
+			_connectedClients.TryRemove(sender, out _);
+
+			foreach (ClientInformationSocket remainingClient in _connectedClients.Values)
+				_packetsToSend.Enqueue((remainingClient.IP, new ClientDisconnectedPacket(client.ID)));
+
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientDisconnected?.Invoke(client.ID));
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 		}
 
 		private void HandleACKPacket(ClientInformationSocket sender, byte[] packet)
@@ -766,7 +772,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(newID));
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 
-			ModuledNetManager.AddModuledNetMessage(new($"Client {info} connected!"));
+			ModuledNetManager.AddModuledNetMessage(new($"Client {newClient} connected!"));
 			return newClient;
 		}
 
@@ -788,7 +794,7 @@ namespace CENTIS.UnityModuledNet.Networking
 			foreach (ClientInformationSocket remainingClient in _connectedClients.Values)
 				_packetsToSend.Enqueue((remainingClient.IP, new ClientDisconnectedPacket(clientID)));
 			
-			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientConnected?.Invoke(clientID));
+			_mainThreadActions.Enqueue(() => ModuledNetManager.OnClientDisconnected?.Invoke(clientID));
 			_mainThreadActions.Enqueue(() => ModuledNetManager.OnConnectedClientListChanged?.Invoke());
 
 			ModuledNetManager.AddModuledNetMessage(new($"Client {client} disconnected!"));
