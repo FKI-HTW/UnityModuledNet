@@ -24,6 +24,16 @@ namespace CENTIS.UnityModuledNet
         private string  _newServerName = "New Server";
 
         private Texture2D _texture;
+        private Texture2D Texture
+        {
+            get
+            {
+                if (_texture == null)
+                    _texture = new(1, 1);
+                return _texture;
+            }
+        }
+
         private GUIStyle _style = new();
 
         private const float ROW_HEIGHT = 20;
@@ -38,7 +48,6 @@ namespace CENTIS.UnityModuledNet
 
 		public void OnEnable()
 		{
-            _texture = new(1, 1);
             _settings = ModuledNetSettings.GetOrCreateSettings();
             _settingsEditor = Editor.CreateEditor(_settings);
             ModuledNetManager.OnSyncMessageAdded += AddSyncMessage;
@@ -159,7 +168,7 @@ namespace CENTIS.UnityModuledNet
                                 EditorGUILayout.BeginHorizontal(GetScrollviewRowStyle(_scrollViewColors[i % 2]));
                                 {
                                     _style.normal.textColor = client.Color;
-                                    GUILayout.Label(client.Username, _style);
+                                    GUILayout.Label(client.ToString(), _style);
                                 }
                                 EditorGUILayout.EndHorizontal();
                             }
@@ -216,10 +225,10 @@ namespace CENTIS.UnityModuledNet
 
         private GUIStyle GetScrollviewRowStyle(Color color)
         {
-            _texture.SetPixel(0, 0, color);
-            _texture.Apply();
+            Texture.SetPixel(0, 0, color);
+            Texture.Apply();
             GUIStyle style = new();
-            style.normal.background = _texture;
+            style.normal.background = Texture;
             style.fixedHeight = ROW_HEIGHT;
             return style;
         }
