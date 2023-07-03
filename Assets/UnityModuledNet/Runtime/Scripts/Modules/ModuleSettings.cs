@@ -5,6 +5,11 @@ using UnityEditor;
 
 namespace CENTIS.UnityModuledNet.Modules
 {
+    public interface IModuleSettings
+    {
+        void DrawModuleSettingsFoldout();
+    }
+
     /// <summary>
     /// You need to implement the InitializeOnLoad class-attribute
     /// and this constructor in the child class 
@@ -16,11 +21,42 @@ namespace CENTIS.UnityModuledNet.Modules
     /// }
     /// </summary>
     [System.Serializable]
-    public abstract class ModuleSettings : ScriptableObject
+    public abstract class ModuleSettings<T> : ScriptableObject, IModuleSettings where T : ModuledNetModule, new()
     {
         private bool _settingsVisibleInGUI = false;
 
+        [SerializeField] private bool _isModuleActive = true;
+
+        private T _module;
+
+        protected bool IsModuleActive
+        {
+            get => _isModuleActive;
+            set
+            {
+                _isModuleActive = value;
+                if (_isModuleActive) InstatiateModule();
+                else _module = null;
+            }
+        }
+
+        protected T Module => _module;
+
         protected abstract string SettingsName { get; }
+
+        protected ModuleSettings()
+        {
+#if UNITY_EDITOR
+            AssemblyReloadEvents.afterAssemblyReload += InstatiateModule;
+#else
+            InstatiateModule();
+#endif
+        }
+
+        private void InstatiateModule()
+        {
+            if (_module == null && IsModuleActive) _module = new T();
+        }
 
         public virtual void DrawModuleSettingsFoldout()
         {
@@ -29,6 +65,8 @@ namespace CENTIS.UnityModuledNet.Modules
             if (_settingsVisibleInGUI)
             {
                 EditorGUI.indentLevel++;
+                IsModuleActive = EditorGUILayout.Toggle("Active", IsModuleActive);
+
                 DrawModuleSettings();
                 EditorGUI.indentLevel--;
             }

@@ -20,8 +20,8 @@ namespace CENTIS.UnityModuledNet
 
         private static ModuledNetSettings cachedSettings;
 
-        private static readonly HashSet<ModuleSettings> _moduleSettings = new();
-        public HashSet<ModuleSettings> ModuleSettings => _moduleSettings;
+        private static readonly HashSet<IModuleSettings> _moduleSettings = new();
+        public HashSet<IModuleSettings> ModuleSettings => _moduleSettings;
 
         // settings
         // user settings
@@ -144,7 +144,7 @@ namespace CENTIS.UnityModuledNet
 				settings = ScriptableObject.CreateInstance<ModuledNetSettings>();
 			}
 #endif
-            if (settings is ModuleSettings moduleSyncSettings)
+            if (settings is IModuleSettings moduleSyncSettings)
             {
                 _moduleSettings.Add(moduleSyncSettings);
             }
