@@ -198,9 +198,9 @@ namespace CENTIS.UnityModuledNet.Managing
 			Start();
 			EditorApplication.update += Update;
 #else
-			SyncRuntimeManager.Instance.OnAwake += Awake;
-			SyncRuntimeManager.Instance.OnStart += Start;
-			SyncRuntimeManager.Instance.OnUpdate += Update;
+			ModuledNetRuntimeManager.Instance.OnAwake += Awake;
+			ModuledNetRuntimeManager.Instance.OnStart += Start;
+			ModuledNetRuntimeManager.Instance.OnUpdate += Update;
 #endif
 
 			DataReceived += OnDataReceived;
