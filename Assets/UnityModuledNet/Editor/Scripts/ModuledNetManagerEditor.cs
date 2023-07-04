@@ -6,7 +6,7 @@ using CENTIS.UnityModuledNet.Managing;
 
 namespace CENTIS.UnityModuledNet
 {
-    internal class ModuledEditorEditorWindow : EditorWindow
+    internal class ModuledNetManagerEditor : EditorWindow
     {
         #region private members
 
@@ -43,7 +43,7 @@ namespace CENTIS.UnityModuledNet
         [MenuItem("Window/ModuledNet/ModuledNet Manager")]
         public static void ShowWindow()
         {
-            GetWindow(typeof(ModuledEditorEditorWindow), false, "ModuledNet Manager");
+            GetWindow(typeof(ModuledNetManagerEditor), false, "ModuledNet Manager");
         }
 
 		public void OnEnable()
