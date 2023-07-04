@@ -111,7 +111,7 @@ namespace CENTIS.UnityModuledNet
             return cachedSettings ?? (cachedSettings = GetOrCreateSettings<ModuledNetSettings>(_settingsName, _settingsFilePath));
         }
 
-        public static T GetOrCreateSettings<T>(string settingsName, string path = _settingsFilePath) where T : ScriptableObject
+        public static T GetOrCreateSettings<T>(string settingsName, string path = _settingsFilePath) where T : ModuledNetSettings
         {
             T settings = Resources.Load<T>(Path.GetFileNameWithoutExtension(settingsName + _settingsNameFSuffix));
             string fullPath = GetSettingsFileFullPath(settingsName, path);
@@ -141,7 +141,7 @@ namespace CENTIS.UnityModuledNet
 #else
 			if (!settings)
 			{
-				settings = ScriptableObject.CreateInstance<ModuledNetSettings>();
+				settings = ScriptableObject.CreateInstance<T>();
 			}
 #endif
             if (settings is IModuleSettings moduleSyncSettings)
