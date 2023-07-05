@@ -1,6 +1,7 @@
 
 using System;
 using System.Net;
+using UnityEngine;
 
 namespace CENTIS.UnityModuledNet.Networking
 {
@@ -35,6 +36,48 @@ namespace CENTIS.UnityModuledNet.Networking
         public override int GetHashCode()
         {
             return IP.GetHashCode();
+        }
+
+        [Serializable]
+        private class StringRepresentation
+        {
+            [SerializeField] private string ip;
+            [SerializeField] private string servername;
+            [SerializeField] private byte maxNumberConnectedClients;
+            [SerializeField] private string lastHeartbeat;
+
+            public IPAddress IP => IPAddress.Parse(ip);
+            public string Servername => servername;
+            public byte MaxNumberConnectedClients => maxNumberConnectedClients;
+            public DateTime LastHeartbeat => DateTime.Parse(lastHeartbeat);
+
+            public StringRepresentation(IPAddress ip, string servername, byte maxNumberConnectedClients, DateTime lastHeartbeat)
+            {
+                this.ip = ip.ToString();
+                this.servername = servername;
+                this.maxNumberConnectedClients = maxNumberConnectedClients;
+                this.lastHeartbeat = lastHeartbeat.ToString();
+            }
+
+            public StringRepresentation(string ip, string servername, byte maxNumberConnectedClients, string lastHeartbeat)
+            {
+                this.ip = ip;
+                this.servername = servername;
+                this.maxNumberConnectedClients = maxNumberConnectedClients;
+                this.lastHeartbeat = lastHeartbeat;
+            }
+        }
+
+        public string ToJson()
+        {
+            var jsonObject = new StringRepresentation(IP, Servername, MaxNumberConnectedClients, LastHeartbeat);
+            return JsonUtility.ToJson(jsonObject);
+        }
+
+        public static ServerInformation FromJson(string json)
+        {
+            var jsonObject = JsonUtility.FromJson<StringRepresentation>(json);
+            return new ServerInformation(jsonObject.IP, jsonObject.Servername, jsonObject.MaxNumberConnectedClients);
         }
     }
 
