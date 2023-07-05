@@ -30,11 +30,26 @@ namespace CENTIS.UnityModuledNet.Networking
 
 		protected readonly ConcurrentQueue<Action> _mainThreadActions = new();
 
-		#endregion
+        #endregion
 
-		#region public properties
+        #region public properties
 
-		private ConnectionStatus _connectionStatus = ConnectionStatus.IsDisconnected;
+        /// <summary>
+        /// Action for when connection to or creation of a server is being started.
+        /// </summary>
+        public event Action OnConnecting;
+
+        /// <summary>
+        /// Action for when successfully connecting to or creating a Server.
+        /// </summary>
+        public event Action OnConnected;
+
+        /// <summary>
+        /// Action for when disconnecting from or closing the Server.
+        /// </summary>
+        public event Action OnDisconnected;
+
+        private ConnectionStatus _connectionStatus = ConnectionStatus.IsDisconnected;
 		public ConnectionStatus ConnectionStatus
 		{
 			get => _connectionStatus;
@@ -46,14 +61,14 @@ namespace CENTIS.UnityModuledNet.Networking
 				_connectionStatus = value;
 				switch (value)
 				{
-					case ConnectionStatus.IsDisconnected:
-						ModuledNetManager.OnDisconnected?.Invoke();
-						break;
 					case ConnectionStatus.IsConnecting:
-						ModuledNetManager.OnConnecting?.Invoke();
+						OnConnecting?.Invoke();
 						break;
 					case ConnectionStatus.IsConnected:
-						ModuledNetManager.OnConnected?.Invoke();
+						OnConnected?.Invoke();
+						break;
+					case ConnectionStatus.IsDisconnected:
+						OnDisconnected?.Invoke();
 						break;
 				}
 			}
