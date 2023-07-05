@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Net;
@@ -14,7 +13,6 @@ using CENTIS.UnityModuledNet.Networking;
 using CENTIS.UnityModuledNet.Networking.Packets;
 using CENTIS.UnityModuledNet.Modules;
 using CENTIS.UnityModuledNet.Serialiser;
-using UnityEngine.Assertions;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -38,56 +36,56 @@ namespace CENTIS.UnityModuledNet.Managing
             }
         }
 
-        public static Action OnAwake;
-        public static Action OnStart;
-        public static Action OnUpdate;
+        public static event Action OnAwake;
+        public static event Action OnStart;
+        public static event Action OnUpdate;
 
-        public static Action OnSyncMessageAdded;
+        public static event Action OnSyncMessageAdded;
 
         /// <summary>
         /// Action for when the Server Discovery was activated.
         /// </summary>
-        public static Action OnServerDiscoveryActivated;
+        public static event Action OnServerDiscoveryActivated;
 
         /// <summary>
         /// Action for when the Server Discovery was deactivated.
         /// </summary>
-        public static Action OnServerDiscoveryDeactivated;
-
-        /// <summary>
-        /// Action for when successfully connecting to or creating a Server.
-        /// </summary>
-        public static Action OnConnected;
+        public static event Action OnServerDiscoveryDeactivated;
 
         /// <summary>
         /// Action for when connection to or creation of a server is being started.
         /// </summary>
-        public static Action OnConnecting;
+        public static event Action OnConnecting;
+
+        /// <summary>
+        /// Action for when successfully connecting to or creating a Server.
+        /// </summary>
+        public static event Action OnConnected;
 
         /// <summary>
         /// Action for when disconnecting from or closing the Server.
         /// </summary>
-        public static Action OnDisconnected;
+        public static event Action OnDisconnected;
 
         /// <summary>
         /// Action for when a remote Client connected to the current Server and can now receive Messages.
         /// </summary>
-        public static Action<byte> OnClientConnected;
+        public static event Action<byte> OnClientConnected;
 
         /// <summary>
         /// Action for when a remote Client disconnected from the current Server and can no longer receive any Messages.
         /// </summary>
-        public static Action<byte> OnClientDisconnected;
+        public static event Action<byte> OnClientDisconnected;
 
         /// <summary>
         /// Action for when a Client was added or removed from ConnectedClients.
         /// </summary>
-        public static Action OnConnectedClientListChanged;
+        public static event Action OnConnectedClientListChanged;
 
         /// <summary>
         /// Action for when a Server was added or removed from the OpenServers.
         /// </summary>
-        public static Action OnServerListChanged;
+        public static event Action OnServerListChanged;
 
         /// <summary>
         /// If the Client is connected to the Network and able to discover Servers.
@@ -99,7 +97,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
         public static ConnectionStatus ConnectionStatus
         {
-            get => _socket == null ? ConnectionStatus.IsDisconnected : _socket.ConnectionStatus;
+            get => Socket == null ? ConnectionStatus.IsDisconnected : Socket.ConnectionStatus;
         }
 
         /// <summary>
@@ -107,7 +105,7 @@ namespace CENTIS.UnityModuledNet.Managing
         /// </summary>
         public static bool IsConnected
         {
-            get => _socket != null && _socket.IsConnected;
+            get => Socket != null && Socket.IsConnected;
         }
 
         /// <summary>
@@ -126,7 +124,7 @@ namespace CENTIS.UnityModuledNet.Managing
         public static ServerInformation CurrentServer
         {
             get => IsConnected
-                ? _socket.ServerInformation
+                ? Socket.ServerInformation
                 : null;
         }
 
@@ -136,7 +134,7 @@ namespace CENTIS.UnityModuledNet.Managing
         public static ClientInformation LocalClient
         {
             get => IsConnected
-                ? _socket.ClientInformation
+                ? Socket.ClientInformation
                 : null;
         }
 
@@ -146,7 +144,7 @@ namespace CENTIS.UnityModuledNet.Managing
         public static ConcurrentDictionary<byte, ClientInformation> ConnectedClients
         {
             get => IsConnected
-                ? _socket.ConnectedClients
+                ? Socket.ConnectedClients
                 : null;
         }
 
@@ -186,6 +184,56 @@ namespace CENTIS.UnityModuledNet.Managing
         private static Thread _discoveryThread;
 
         private static ANetworkSocket _socket;
+        private static ANetworkSocket Socket
+        {
+            get => _socket;
+            set
+            {
+                if (_socket == value) return;
+
+                if (_socket != null)
+                {
+                    _socket.OnConnecting -= OnConnecting;
+                    _socket.OnConnected -= OnConnected;
+                    _socket.OnDisconnected -= OnDisconnected;
+
+                    if(_socket is NetworkServer networkServer)
+                    {
+                        networkServer.OnClientConnected -= OnClientConnected;
+                        networkServer.OnClientDisconnected -= OnClientDisconnected;
+                        networkServer.OnConnectedClientListChanged -= OnConnectedClientListChanged;
+                    }
+                    else if(_socket is NetworkClient networkClient)
+                    {
+                        networkClient.OnClientConnected -= OnClientConnected;
+                        networkClient.OnClientDisconnected -= OnClientDisconnected;
+                        networkClient.OnConnectedClientListChanged -= OnConnectedClientListChanged;
+                    }
+                }
+                _socket = value;
+                if (_socket != null)
+                {
+                    _socket.OnConnecting += OnConnecting;
+                    _socket.OnConnected += OnConnected;
+                    _socket.OnDisconnected += OnDisconnected;
+
+                    if (_socket is NetworkServer networkServer)
+                    {
+                        networkServer.OnClientConnected += OnClientConnected;
+                        networkServer.OnClientDisconnected += OnClientDisconnected;
+                        networkServer.OnConnectedClientListChanged += OnConnectedClientListChanged;
+                    }
+                    else if (_socket is NetworkClient networkClient)
+                    {
+                        networkClient.OnClientConnected += OnClientConnected;
+                        networkClient.OnClientDisconnected += OnClientDisconnected;
+                        networkClient.OnConnectedClientListChanged += OnConnectedClientListChanged;
+                    }
+                }
+            }
+        }
+
+
         private static bool _isServerDiscoveryActive;
 
         private static ServerInformation ServerInformationBeforeRecompile
@@ -199,6 +247,7 @@ namespace CENTIS.UnityModuledNet.Managing
             }
         }
 
+
         #endregion
 
         #region unity lifecycle
@@ -210,6 +259,7 @@ namespace CENTIS.UnityModuledNet.Managing
             Start();
             EditorApplication.update += Update;
 
+            // Disconnect Server on recompile
             AssemblyReloadEvents.beforeAssemblyReload += () =>
             {
                 if (IsConnected is false)
@@ -221,6 +271,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
                 DisconnectFromServer();
             };
+            // Reconnect server on recompile
             AssemblyReloadEvents.afterAssemblyReload += () =>
             {
                 if (_settings.ReconnectAfterRecompile is false) return;
@@ -406,7 +457,7 @@ namespace CENTIS.UnityModuledNet.Managing
             if (!IsEligibleForSending(onDataSend))
                 return;
 
-            _socket.SendDataReliable(moduleID, data, onDataSend, receiver);
+            Socket.SendDataReliable(moduleID, data, onDataSend, receiver);
         }
 
         internal static void SendDataReliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
@@ -414,7 +465,7 @@ namespace CENTIS.UnityModuledNet.Managing
             if (!IsEligibleForSending(onDataSend))
                 return;
 
-            _socket.SendDataReliableUnordered(moduleID, data, onDataSend, receiver);
+            Socket.SendDataReliableUnordered(moduleID, data, onDataSend, receiver);
         }
 
         internal static void SendDataUnreliable(byte[] moduleID, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
@@ -422,7 +473,7 @@ namespace CENTIS.UnityModuledNet.Managing
             if (!IsEligibleForSending(onDataSend))
                 return;
 
-            _socket.SendDataUnreliable(moduleID, data, onDataSend, receiver);
+            Socket.SendDataUnreliable(moduleID, data, onDataSend, receiver);
         }
 
         internal static void SendDataUnreliableUnordered(byte[] moduleID, byte[] data, Action<bool> onDataSend = null, byte? receiver = null)
@@ -430,7 +481,7 @@ namespace CENTIS.UnityModuledNet.Managing
             if (!IsEligibleForSending(onDataSend))
                 return;
 
-            _socket.SendDataUnreliableUnordered(moduleID, data, onDataSend, receiver);
+            Socket.SendDataUnreliableUnordered(moduleID, data, onDataSend, receiver);
         }
 
         #endregion
@@ -524,7 +575,7 @@ namespace CENTIS.UnityModuledNet.Managing
                 return;
             }
 
-            _socket = new NetworkClient(serverIP, onConnectionEstablished);
+            Socket = new NetworkClient(serverIP, onConnectionEstablished);
         }
 
         /// <summary>
@@ -541,7 +592,7 @@ namespace CENTIS.UnityModuledNet.Managing
                 return;
             }
 
-            _socket = new NetworkServer(servername, onConnectionEstablished);
+            Socket = new NetworkServer(servername, onConnectionEstablished);
         }
 
         /// <summary>
@@ -549,13 +600,13 @@ namespace CENTIS.UnityModuledNet.Managing
         /// </summary>
         public static void DisconnectFromServer()
         {
-            if (_socket == null)
+            if (Socket == null)
             {
                 Debug.LogWarning("The local Client is not currently connected to a Server!");
                 return;
             }
 
-            _socket.DisconnectFromServer();
+            Socket.DisconnectFromServer();
         }
 
         public static void AddModuledNetMessage(ModuledNetMessage message)
