@@ -27,6 +27,7 @@ namespace CENTIS.UnityModuledNet
         // user settings
         public string Username = "Username";
         public Color32 Color = new(255, 255, 255, 255);
+        public bool ReconnectAfterRecompile = false;
 
         // server settings
         private byte _maxNumberClients = 253;
