@@ -53,6 +53,13 @@ namespace CENTIS.UnityModuledNet.Modules
 #endif
         }
 
+        ~ModuleSettings()
+        {
+#if UNITY_EDITOR
+            AssemblyReloadEvents.afterAssemblyReload -= InstatiateModule;
+#endif
+        }
+
         private void InstatiateModule()
         {
             if (_module == null && IsModuleActive) _module = new T();
