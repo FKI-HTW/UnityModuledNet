@@ -18,7 +18,7 @@ namespace CENTIS.UnityModuledNet.Networking
     {
         #region private fields
 
-        private readonly Thread _heartbeatThread;
+        private Thread _heartbeatThread;
 
         private readonly ConcurrentDictionary<IPAddress, byte[]> _pendingConnections = new();
 
@@ -30,6 +30,8 @@ namespace CENTIS.UnityModuledNet.Networking
         #endregion
 
         #region public properties
+
+        public string ServerName { get; private set; }
 
         /// <summary>
         /// Action for when a remote Client connected to the current Server and can now receive Messages.
@@ -52,8 +54,13 @@ namespace CENTIS.UnityModuledNet.Networking
 
         #region lifecycle
 
-        public NetworkServer(string servername, Action<bool> onConnectionEstablished)
+        public NetworkServer(string serverName)
         {
+            ServerName = serverName;
+        }
+
+        public void StartServer(Action<bool> onConnectionEstablished)
+        { 
             try
             {
                 if (!CheckLocalIP(ModuledNetManager.LocalIP))
@@ -63,14 +70,14 @@ namespace CENTIS.UnityModuledNet.Networking
                     return;
                 }
 
-                if (servername.Length > 100 || _settings.Username.Length > 100)
+                if (ServerName.Length > 100 || _settings.Username.Length > 100)
                 {
                     Debug.LogError($"The Servername and Username must be shorter than 100 Characters!");
                     onConnectionEstablished?.Invoke(false);
                     return;
                 }
 
-                if (!IsASCIIString(servername) || !IsASCIIString(_settings.Username))
+                if (!IsASCIIString(ServerName) || !IsASCIIString(_settings.Username))
                 {
                     Debug.LogError($"The Servername and Username must be ASCII Strings!");
                     onConnectionEstablished?.Invoke(false);
@@ -83,7 +90,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 _port = _settings.Port;
                 _udpClient = new(_port);
 
-                ServerInformation = new(_localIP, servername, _settings.MaxNumberClients);
+                ServerInformation = new(_localIP, ServerName, _settings.MaxNumberClients);
                 ClientInformation = new(1, _settings.Username, _settings.Color);
 
                 _listenerThread = new(() => ListenerThread()) { IsBackground = true };

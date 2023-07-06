@@ -193,46 +193,45 @@ namespace CENTIS.UnityModuledNet.Managing
 
                 if (_socket != null)
                 {
-                    _socket.OnConnecting -= OnConnecting;
-                    _socket.OnConnected -= OnConnected;
-                    _socket.OnDisconnected -= OnDisconnected;
+                    _socket.OnConnecting -= FireConnectingEvent;
+                    _socket.OnConnected -= FireConnectedEvent;
+                    _socket.OnDisconnected -= FireDisconnectedEvent;
 
-                    if(_socket is NetworkServer networkServer)
+                    if (_socket is NetworkServer networkServer)
                     {
-                        networkServer.OnClientConnected -= OnClientConnected;
-                        networkServer.OnClientDisconnected -= OnClientDisconnected;
-                        networkServer.OnConnectedClientListChanged -= OnConnectedClientListChanged;
+                        networkServer.OnClientConnected -= FireClientConnectedEvent;
+                        networkServer.OnClientDisconnected -= FireClientDisconnectedEvent;
+                        networkServer.OnConnectedClientListChanged -= FireConnectedClientListChangedEvent;
                     }
-                    else if(_socket is NetworkClient networkClient)
+                    else if (_socket is NetworkClient networkClient)
                     {
-                        networkClient.OnClientConnected -= OnClientConnected;
-                        networkClient.OnClientDisconnected -= OnClientDisconnected;
-                        networkClient.OnConnectedClientListChanged -= OnConnectedClientListChanged;
+                        networkClient.OnClientConnected -= FireClientConnectedEvent;
+                        networkClient.OnClientDisconnected -= FireClientDisconnectedEvent;
+                        networkClient.OnConnectedClientListChanged -= FireConnectedClientListChangedEvent;
                     }
                 }
                 _socket = value;
                 if (_socket != null)
                 {
-                    _socket.OnConnecting += OnConnecting;
-                    _socket.OnConnected += OnConnected;
-                    _socket.OnDisconnected += OnDisconnected;
+                    _socket.OnConnecting += FireConnectingEvent;
+                    _socket.OnConnected += FireConnectedEvent;
+                    _socket.OnDisconnected += FireDisconnectedEvent;
 
                     if (_socket is NetworkServer networkServer)
                     {
-                        networkServer.OnClientConnected += OnClientConnected;
-                        networkServer.OnClientDisconnected += OnClientDisconnected;
-                        networkServer.OnConnectedClientListChanged += OnConnectedClientListChanged;
+                        networkServer.OnClientConnected += FireClientConnectedEvent;
+                        networkServer.OnClientDisconnected += FireClientDisconnectedEvent;
+                        networkServer.OnConnectedClientListChanged += FireConnectedClientListChangedEvent;
                     }
                     else if (_socket is NetworkClient networkClient)
                     {
-                        networkClient.OnClientConnected += OnClientConnected;
-                        networkClient.OnClientDisconnected += OnClientDisconnected;
-                        networkClient.OnConnectedClientListChanged += OnConnectedClientListChanged;
+                        networkClient.OnClientConnected += FireClientConnectedEvent;
+                        networkClient.OnClientDisconnected += FireClientDisconnectedEvent;
+                        networkClient.OnConnectedClientListChanged += FireConnectedClientListChangedEvent;
                     }
                 }
             }
         }
-
 
         private static bool _isServerDiscoveryActive;
 
@@ -320,6 +319,13 @@ namespace CENTIS.UnityModuledNet.Managing
         #endregion
 
         #region private methods
+
+        private static void FireConnectingEvent() => OnConnecting?.Invoke();
+        private static void FireConnectedEvent() => OnConnected?.Invoke();
+        private static void FireDisconnectedEvent() => OnDisconnected?.Invoke();
+        private static void FireClientConnectedEvent(byte id) => OnClientConnected?.Invoke(id);
+        private static void FireClientDisconnectedEvent(byte id) => OnClientDisconnected?.Invoke(id);
+        private static void FireConnectedClientListChangedEvent() => OnConnectedClientListChanged?.Invoke();
 
         private static string GetLocalIPAddress()
         {
@@ -575,7 +581,12 @@ namespace CENTIS.UnityModuledNet.Managing
                 return;
             }
 
-            Socket = new NetworkClient(serverIP, onConnectionEstablished);
+            var networkClient = new NetworkClient(serverIP); // ToDo: Handle this in a way that the networkCLient can be reused to connect to a different server ip
+            // 1. Make sure there is a valid network client
+            // 2. Close other connections. Own server or existing connection.
+            // 3. Connect to wanted ip
+            Socket = networkClient; 
+            networkClient.Connect(onConnectionEstablished);
         }
 
         /// <summary>
@@ -592,7 +603,9 @@ namespace CENTIS.UnityModuledNet.Managing
                 return;
             }
 
-            Socket = new NetworkServer(servername, onConnectionEstablished);
+            var networkServer = new NetworkServer(servername);
+            Socket = networkServer;
+            networkServer.StartServer(onConnectionEstablished);
         }
 
         /// <summary>
