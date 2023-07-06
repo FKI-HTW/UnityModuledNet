@@ -18,7 +18,6 @@ namespace CENTIS.UnityModuledNet.Networking
         #region private fields
 
         private readonly IPAddress _serverIP;
-        private readonly Action<bool> _onConnectionEstablished;
         private readonly ConcurrentDictionary<byte, ClientInformation> _connectedClients = new();
 
         private readonly ConcurrentQueue<ANetworkPacket> _packetsToSend = new();
@@ -34,8 +33,8 @@ namespace CENTIS.UnityModuledNet.Networking
         private ushort _reliableLocalSequence = 0;
         private ushort _reliableRemoteSequence = 0;
 
-        private readonly string _tmpUsername;
-        private readonly Color32 _tmpColor;
+        private string _tmpUsername;
+        private Color32 _tmpColor;
 
         #endregion
 
@@ -62,8 +61,13 @@ namespace CENTIS.UnityModuledNet.Networking
 
         #region lifecycle
 
-        public NetworkClient(IPAddress serverIP, Action<bool> onConnectionEstablished)
+        public NetworkClient(IPAddress serverIP)
         {
+            _serverIP = serverIP;
+        }
+
+        public void Connect(Action<bool> onConnectionEstablished)
+        { 
             try
             {
                 if (!CheckLocalIP(ModuledNetManager.LocalIP))
@@ -73,7 +77,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     return;
                 }
 
-                if (serverIP == null)
+                if (_serverIP == null)
                 {
                     Debug.LogError("The given server IP is not a valid IP!");
                     onConnectionEstablished?.Invoke(false);
@@ -95,10 +99,8 @@ namespace CENTIS.UnityModuledNet.Networking
                 _localIP = IPAddress.Parse(ModuledNetManager.LocalIP);
                 _port = _settings.Port;
                 _udpClient = new(_port);
-                _serverIP = serverIP;
-                _onConnectionEstablished = onConnectionEstablished;
 
-                _listenerThread = new(() => ListenerThread()) { IsBackground = true };
+                _listenerThread = new(() => ListenerThread(onConnectionEstablished)) { IsBackground = true };
                 _listenerThread.Start();
                 _senderThread = new(() => SenderThread()) { IsBackground = true };
                 _senderThread.Start();
@@ -107,7 +109,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
                 ModuledNetManager.AddModuledNetMessage(new("Connecting to Server..."));
                 _packetsToSend.Enqueue(new ConnectionRequestPacket());
-                _ = TimeoutEstablishConnection();
+                _ = TimeoutEstablishConnection(onConnectionEstablished);
             }
             catch (Exception ex)
             {
@@ -239,7 +241,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
         #region listener logic
 
-        private void ListenerThread()
+        private void ListenerThread(Action<bool> onConnectionEstablished)
         {
             while (_disposeCount == 0)
             {
@@ -270,10 +272,10 @@ namespace CENTIS.UnityModuledNet.Networking
                             HandleConnectionChallengePacket(receivedBytes);
                             break;
                         case EPacketType.ConnectionAccepted:
-                            HandleConnectionAcceptedPacket(receivedBytes);
+                            HandleConnectionAcceptedPacket(receivedBytes, onConnectionEstablished);
                             break;
                         case EPacketType.ConnectionDenied:
-                            HandleConnectionDeniedPacket(receivedBytes);
+                            HandleConnectionDeniedPacket(receivedBytes, onConnectionEstablished);
                             break;
                         case EPacketType.ConnectionClosed:
                             HandleConnectionClosedPacket(receivedBytes);
@@ -379,7 +381,7 @@ namespace CENTIS.UnityModuledNet.Networking
             _packetsToSend.Enqueue(challengeAnswer);
         }
 
-        private void HandleConnectionAcceptedPacket(byte[] packet)
+        private void HandleConnectionAcceptedPacket(byte[] packet, Action<bool> onConnectionEstablished)
         {
             if (ConnectionStatus != ConnectionStatus.IsConnecting)
                 return;
@@ -391,13 +393,13 @@ namespace CENTIS.UnityModuledNet.Networking
             ClientInformation = new(connectionAccepted.ClientID, _tmpUsername, _tmpColor);
             ServerInformation = new(_serverIP, connectionAccepted.Servername, connectionAccepted.MaxNumberConnectedClients);
 
-            _mainThreadActions.Enqueue(() => _onConnectionEstablished?.Invoke(true));
+            _mainThreadActions.Enqueue(() => onConnectionEstablished?.Invoke(true));
             _mainThreadActions.Enqueue(() => ConnectionStatus = ConnectionStatus.IsConnected);
 
             ModuledNetManager.AddModuledNetMessage(new("Connected to Server!"));
         }
 
-        private void HandleConnectionDeniedPacket(byte[] packet)
+        private void HandleConnectionDeniedPacket(byte[] packet, Action<bool> onConnectionEstablished)
         {
             if (ConnectionStatus != ConnectionStatus.IsConnecting)
                 return;
@@ -406,7 +408,7 @@ namespace CENTIS.UnityModuledNet.Networking
             if (!connectionDenied.TryDeserialize())
                 return;
 
-            _mainThreadActions.Enqueue(() => _onConnectionEstablished?.Invoke(false));
+            _mainThreadActions.Enqueue(() => onConnectionEstablished?.Invoke(false));
             _mainThreadActions.Enqueue(() => Dispose());
 
             ModuledNetManager.AddModuledNetMessage(new("Connection has been denied!"));
@@ -708,13 +710,13 @@ namespace CENTIS.UnityModuledNet.Networking
         /// Stops the process of establishing a Connection, if it did not success within a given timeout.
         /// </summary>
         /// <returns></returns>
-        private async Task TimeoutEstablishConnection()
+        private async Task TimeoutEstablishConnection(Action<bool> onConnectionEstablished)
         {
             await Task.Delay(_settings.ServerConnectionTimeout);
             if (!IsConnected)
             {
                 Dispose();
-                _onConnectionEstablished?.Invoke(false);
+                onConnectionEstablished?.Invoke(false);
             }
         }
 
