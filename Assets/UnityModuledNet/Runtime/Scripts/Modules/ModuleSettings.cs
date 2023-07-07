@@ -76,6 +76,8 @@ namespace CENTIS.UnityModuledNet.Modules
 
                 DrawModuleSettings();
                 EditorGUI.indentLevel--;
+
+                EditorUtility.SetDirty(this);
             }
 #endif
         }
