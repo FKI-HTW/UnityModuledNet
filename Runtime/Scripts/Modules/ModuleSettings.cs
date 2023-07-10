@@ -75,9 +75,18 @@ namespace CENTIS.UnityModuledNet.Modules
             if (_settingsVisibleInGUI)
             {
                 EditorGUI.indentLevel++;
+
+                GUILayout.BeginHorizontal();
                 IsModuleActive = EditorGUILayout.Toggle("Active", IsModuleActive);
 
+                GUI.enabled = false;
+                var _ = EditorGUILayout.ObjectField(this, this.GetType(), false);
+                GUI.enabled = true;
+
+                GUILayout.EndHorizontal();
+
                 DrawModuleSettings();
+
                 EditorGUI.indentLevel--;
 
                 EditorUtility.SetDirty(this);

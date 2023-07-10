@@ -1,8 +1,10 @@
+using System;
 using System.IO;
 using UnityEngine;
 using System.Collections.Generic;
 using CENTIS.UnityModuledNet.Managing;
 using CENTIS.UnityModuledNet.Modules;
+using System.Linq;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -20,8 +22,8 @@ namespace CENTIS.UnityModuledNet
 
         private static ModuledNetSettings cachedSettings;
 
-        private static readonly HashSet<IModuleSettings> _moduleSettings = new();
-        public HashSet<IModuleSettings> ModuleSettings => _moduleSettings;
+        private static readonly Dictionary<Type, IModuleSettings> _moduleSettings = new();
+        public HashSet<IModuleSettings> ModuleSettings => _moduleSettings.Values.ToHashSet();
 
         // settings
         // user settings
@@ -145,9 +147,10 @@ namespace CENTIS.UnityModuledNet
 				settings = ScriptableObject.CreateInstance<T>();
 			}
 #endif
-            if (settings is IModuleSettings moduleSyncSettings)
+            if (settings is IModuleSettings moduleSyncSettings
+                && _moduleSettings.ContainsKey(settings.GetType()) is false)
             {
-                _moduleSettings.Add(moduleSyncSettings);
+                _moduleSettings.Add(moduleSyncSettings.GetType(), moduleSyncSettings);
             }
 
             return settings;
