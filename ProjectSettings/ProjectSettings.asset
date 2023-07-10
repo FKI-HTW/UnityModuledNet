@@ -155,7 +155,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Standalone: com.CENTIS-HTW.VisualizerModule
+    Standalone: com.CENTIS-HTW.UnityModuledNet
   buildNumber:
     Standalone: 0
     iPhone: 0
@@ -636,14 +636,14 @@ PlayerSettings:
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: Template3D
+  metroPackageName: UnityModulesNet
   metroPackageVersion: 1.0.0.0
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: Template_3D
+  metroApplicationDescription: UnityModulesNet
   wsaImages: {}
   metroTileShortName: My project
   metroTileShowName: 0
