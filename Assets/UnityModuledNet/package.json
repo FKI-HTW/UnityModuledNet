@@ -1,6 +1,6 @@
 {
   "name": "de.htw-berlin.centis.unity-moduled-net",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "displayName": "Unity Moduled Net",
   "description": "Unity Moduled Networking Package",
   "unity": "2021.3",
