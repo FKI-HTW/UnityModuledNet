@@ -36,6 +36,8 @@ namespace CENTIS.UnityModuledNet.Managing
             }
         }
 
+        public static IPAddress IP => IPAddress.Parse(LocalIP);
+
         public static event Action OnAwake;
         public static event Action OnStart;
         public static event Action OnUpdate;
@@ -178,7 +180,6 @@ namespace CENTIS.UnityModuledNet.Managing
 
         private readonly static ConcurrentQueue<Action> _mainThreadActions = new();
 
-        private static IPAddress _ip;
         private static UdpClient _udpClient;
 
         private static Thread _discoveryThread;
@@ -245,7 +246,6 @@ namespace CENTIS.UnityModuledNet.Managing
                 else PlayerPrefs.DeleteKey(nameof(ServerInformationBeforeRecompile));
             }
         }
-
 
         #endregion
 
@@ -365,7 +365,7 @@ namespace CENTIS.UnityModuledNet.Managing
                     // get packet ip headers
                     byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
                     IPAddress sender = receiveEndpoint.Address;
-                    if (sender.Equals(_ip))
+                    if (sender.Equals(IP))
                         continue;
 
                     // get packet type without chunked packet bit
@@ -522,7 +522,7 @@ namespace CENTIS.UnityModuledNet.Managing
                     _discoveryThread.Join();
                 }
 
-                _ip = IPAddress.Parse(LocalIP);
+                UpdateIPAddress();
 
                 _udpClient = new();
                 _udpClient.EnableBroadcast = true;
@@ -567,6 +567,11 @@ namespace CENTIS.UnityModuledNet.Managing
             }
         }
 
+        public static void UpdateIPAddress()
+        {
+            LocalIP = GetLocalIPAddress();
+        }
+
         /// <summary>
         /// Connect to a given Server. Membership in a Server is required before Data can be send.
         /// </summary>
@@ -585,7 +590,7 @@ namespace CENTIS.UnityModuledNet.Managing
             // 1. Make sure there is a valid network client
             // 2. Close other connections. Own server or existing connection.
             // 3. Connect to wanted ip
-            Socket = networkClient; 
+            Socket = networkClient;
             networkClient.Connect(onConnectionEstablished);
         }
 

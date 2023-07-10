@@ -44,7 +44,11 @@ namespace CENTIS.UnityModuledNet
             {
                 EditorGUI.indentLevel++;
                 ModuledNetManager.IsDebug = EditorGUILayout.Toggle(new GUIContent("Is Debug:", "Allows the display of debug messages."), ModuledNetManager.IsDebug);
-                ModuledNetManager.LocalIP = EditorGUILayout.TextField("Local IP:", ModuledNetManager.LocalIP);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Local IP:", ModuledNetManager.LocalIP);
+                if (GUILayout.Button("Update IP Address"))
+                    ModuledNetManager.UpdateIPAddress();
+                EditorGUILayout.EndHorizontal();
                 _settings.Port = EditorGUILayout.IntField("Port:", _settings.Port);
                 _settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", _settings.DiscoveryPort);
                 _settings.MTU = EditorGUILayout.IntField("MTU:", _settings.MTU);
