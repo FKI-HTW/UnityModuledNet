@@ -35,6 +35,7 @@ namespace CENTIS.UnityModuledNet
         }
 
         private GUIStyle _style = new();
+        private Vector2 _scrollViewPosition = Vector2.zero;
 
         private const float ROW_HEIGHT = 20;
 
@@ -69,6 +70,7 @@ namespace CENTIS.UnityModuledNet
         // TODO : add descriptions to labels, was too lazy
         void OnGUI()
         {
+            _scrollViewPosition = EditorGUILayout.BeginScrollView(_scrollViewPosition);
             EditorGUILayout.BeginVertical(EditorStyles.inspectorDefaultMargins);
 			{
                 GUILayout.Label("ModuledNet", EditorStyles.largeLabel);
@@ -220,6 +222,7 @@ namespace CENTIS.UnityModuledNet
 
             }
             EditorGUILayout.EndVertical();
+            EditorGUILayout.EndScrollView();
         }
 
 
