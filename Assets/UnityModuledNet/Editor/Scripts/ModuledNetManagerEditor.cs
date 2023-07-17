@@ -51,25 +51,32 @@ namespace CENTIS.UnityModuledNet
 		{
             _settings = ModuledNetSettings.GetOrCreateSettings();
             _settingsEditor = Editor.CreateEditor(_settings);
+
             ModuledNetManager.OnSyncMessageAdded += AddSyncMessage;
             ModuledNetManager.OnConnectedClientListChanged += Repaint;
             ModuledNetManager.OnServerListChanged += Repaint;
         }
 
-		public void CreateGUI()
+        public void CreateGUI()
 		{
         }
 
-        private void OnDestroy()
-		{
+        private void OnDisable()
+        {
             ModuledNetManager.OnSyncMessageAdded -= AddSyncMessage;
             ModuledNetManager.OnConnectedClientListChanged -= Repaint;
-            ModuledNetManager.OnServerListChanged -= Repaint;
+            ModuledNetManager.OnServerListChanged -= Repaint; 
         }
 
         // TODO : add descriptions to labels, was too lazy
-        void OnGUI()
+        private void OnGUI()
         {
+            if(EditorApplication.isCompiling)
+            {
+                GUILayout.Label("is compiling", EditorStyles.largeLabel);
+                return;
+            }
+
             _scrollViewPosition = EditorGUILayout.BeginScrollView(_scrollViewPosition);
             EditorGUILayout.BeginVertical(EditorStyles.inspectorDefaultMargins);
 			{

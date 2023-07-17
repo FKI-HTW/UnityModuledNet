@@ -18,6 +18,11 @@ namespace CENTIS.UnityModuledNet
             _settings = ModuledNetSettings.GetOrCreateSettings();
         }
 
+        private void OnValidate()
+        {
+            AssetDatabase.SaveAssets();
+        }
+
         // TODO : add descriptions to labels, was too lazy
         public override void OnInspectorGUI()
         {

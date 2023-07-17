@@ -56,6 +56,11 @@ namespace CENTIS.UnityModuledNet.Modules
             InstatiateModule();
         }
 
+        private void OnValidate()
+        {
+            AssetDatabase.SaveAssets();
+        }
+
         ~ModuleSettings()
         {
 #if UNITY_EDITOR
