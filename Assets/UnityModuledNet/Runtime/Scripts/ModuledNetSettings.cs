@@ -12,7 +12,7 @@ using UnityEditor;
 
 namespace CENTIS.UnityModuledNet
 {
-    [System.Serializable]
+    [Serializable]
     public class ModuledNetSettings : ScriptableObject
     {
         protected const string _settingsFilePath = "Assets/Resources/";
@@ -44,21 +44,30 @@ namespace CENTIS.UnityModuledNet
         }
 
         // packet frequency settings
-        public int ServerConnectionTimeout = 5000;
-        public int ServerHeartbeatDelay = 1000;
-        public int ServerDiscoveryTimeout = 3000;
-        public int MaxNumberResendReliablePackets = 5;
+        [SerializeField] private int serverConnectionTimeout = 5000;
+        [SerializeField] private int serverHeartbeatDelay = 1000;
+        [SerializeField] private int serverDiscoveryTimeout = 3000;
+        [SerializeField] private int maxNumberResendReliablePackets = 5;
+
+        public int ServerConnectionTimeout { get => serverConnectionTimeout; set => serverConnectionTimeout = value; }
+        public int ServerHeartbeatDelay { get => serverHeartbeatDelay; set => serverHeartbeatDelay = value; }
+        public int ServerDiscoveryTimeout { get => serverDiscoveryTimeout; set => serverDiscoveryTimeout = value; }
+        public int MaxNumberResendReliablePackets { get => maxNumberResendReliablePackets; set => maxNumberResendReliablePackets = value; }
 
         // debug settings
-        public int Port = 26822;
-        public int DiscoveryPort = 26823;
-        private int _mtu = 1200;
+        [SerializeField] private int port = 26822;
+        [SerializeField] private int discoveryPort = 26823;
+        [SerializeField] private int mtu = 1200;
+        [SerializeField] private int rtt = 200;
+
+        public int Port { get => port; set => port = value; }
+        public int DiscoveryPort { get => discoveryPort; set => discoveryPort = value; }
         public int MTU
         {
-            get => _mtu;
+            get => mtu;
             set
             {
-                if (_mtu == value)
+                if (mtu == value)
                     return;
 
                 if (ModuledNetManager.IsConnected)
@@ -67,16 +76,15 @@ namespace CENTIS.UnityModuledNet
                     return;
                 }
 
-                _mtu = value;
+                mtu = value;
             }
         }
-        private int _rtt = 200;
         public int RTT
         {
-            get => _rtt;
+            get => rtt;
             set
             {
-                if (_rtt == value)
+                if (rtt == value)
                     return;
 
                 if (ModuledNetManager.IsConnected)
@@ -85,7 +93,7 @@ namespace CENTIS.UnityModuledNet
                     return;
                 }
 
-                _rtt = value;
+                rtt = value;
             }
         }
 
