@@ -20,7 +20,7 @@ namespace CENTIS.UnityModuledNet.Modules
     ///         _settings = ModuledNetSettings.GetOrCreateSettings<SceneSyncSettings>("Scene");
     /// }
     /// </summary>
-    [System.Serializable]
+    [System.Serializable, InitializeOnLoad]
     public abstract class ModuleSettings<T> : ScriptableObject, IModuleSettings where T : ModuledNetModule, new()
     {
         private bool _settingsVisibleInGUI = false;
@@ -51,16 +51,6 @@ namespace CENTIS.UnityModuledNet.Modules
 #endif
         }
 
-        private void OnEnable()
-        {
-            InstatiateModule();
-        }
-
-        private void OnValidate()
-        {
-            AssetDatabase.SaveAssets();
-        }
-
         ~ModuleSettings()
         {
 #if UNITY_EDITOR
@@ -76,6 +66,8 @@ namespace CENTIS.UnityModuledNet.Modules
         public virtual void DrawModuleSettingsFoldout()
         {
 #if UNITY_EDITOR
+            if (EditorApplication.isCompiling) return;
+
             _settingsVisibleInGUI = EditorGUILayout.Foldout(_settingsVisibleInGUI, SettingsName, EditorStyles.foldoutHeader);
             if (_settingsVisibleInGUI)
             {

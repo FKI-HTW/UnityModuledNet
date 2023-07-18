@@ -24,8 +24,6 @@ namespace CENTIS.UnityModuledNet.Managing
     {
         #region public properties
 
-        public static bool IsDebug = false;
-
         public static string LocalIP
         {
             get => _localIP;
@@ -172,13 +170,12 @@ namespace CENTIS.UnityModuledNet.Managing
 
         private static string _localIP = GetLocalIPAddress();
 
-        private readonly static ModuledNetSettings _settings = ModuledNetSettings.GetOrCreateSettings();
-
         private readonly static ConcurrentDictionary<IPAddress, OpenServerInformation> _openServers = new();
 
         private readonly static ConcurrentDictionary<byte[], ModuledNetModule> _registeredModules = new(new ByteArrayComparer());
 
-        private readonly static ConcurrentQueue<Action> _mainThreadActions = new();
+        private readonly static ConcurrentQueue<Action> mainThreadDispatchQueue = new ();
+
 
         private static UdpClient _udpClient;
 
@@ -273,14 +270,17 @@ namespace CENTIS.UnityModuledNet.Managing
             // Reconnect server on recompile
             AssemblyReloadEvents.afterAssemblyReload += () =>
             {
-                if (_settings.ReconnectAfterRecompile is false) return;
-                var serverInformation = ServerInformationBeforeRecompile;
-                if (serverInformation is null) return;
+                QueueOnUpdate(() =>
+                {
+                    if (ModuledNetSettings.Settings.ReconnectAfterRecompile is false) return;
+                    var serverInformation = ServerInformationBeforeRecompile;
+                    if (serverInformation is null) return;
 
-                if (serverInformation.IP.ToString().Equals(LocalIP))
-                    CreateServer(ServerInformationBeforeRecompile.Servername);
-                else
-                    ConnectToServer(ServerInformationBeforeRecompile.IP);
+                    if (serverInformation.IP.ToString().Equals(LocalIP))
+                        CreateServer(ServerInformationBeforeRecompile.Servername);
+                    else
+                        ConnectToServer(ServerInformationBeforeRecompile.IP);
+                });
             };
 #else
 			ModuledNetRuntimeManager.Instance.OnAwake += Awake;
@@ -290,7 +290,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
             DataReceived += OnDataReceived;
 
-            ResetServerDiscovery();
+            QueueOnUpdate(() => ResetServerDiscovery());
         }
 
         public static void Init() { }
@@ -309,10 +309,21 @@ namespace CENTIS.UnityModuledNet.Managing
         {
             OnUpdate?.Invoke();
 
-            while (_mainThreadActions.Count > 0)
+            lock (mainThreadDispatchQueue)
             {
-                if (_mainThreadActions.TryDequeue(out Action action))
-                    action?.Invoke();
+                while (mainThreadDispatchQueue.Count > 0)
+                {
+                    if (mainThreadDispatchQueue.TryDequeue(out Action action))
+                        action?.Invoke();
+                }
+            }
+        }
+
+        public static void QueueOnUpdate(Action updateAction)
+        {
+            lock (mainThreadDispatchQueue)
+            {
+                mainThreadDispatchQueue.Enqueue(updateAction);
             }
         }
 
@@ -356,7 +367,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
         private static void DiscoveryThread()
         {
-            IPEndPoint receiveEndpoint = new(IPAddress.Any, _settings.DiscoveryPort);
+            IPEndPoint receiveEndpoint = new(IPAddress.Any, ModuledNetSettings.Settings.DiscoveryPort);
 
             while (true)
             {
@@ -387,7 +398,7 @@ namespace CENTIS.UnityModuledNet.Managing
                     // add new values or update server with new values
                     _openServers.AddOrUpdate(sender, newServer, (key, value) => value = newServer);
 
-                    _mainThreadActions.Enqueue(() => OnServerListChanged?.Invoke());
+                    QueueOnUpdate(() => OnServerListChanged?.Invoke());
                 }
                 catch (Exception ex)
                 {
@@ -410,13 +421,13 @@ namespace CENTIS.UnityModuledNet.Managing
 
         private static async Task TimeoutServer(IPAddress serverIP)
         {
-            await Task.Delay(_settings.ServerDiscoveryTimeout);
+            await Task.Delay(ModuledNetSettings.Settings.ServerDiscoveryTimeout);
             if (_openServers.TryGetValue(serverIP, out OpenServerInformation server))
             {   // timeout and remove servers that haven't been updated for longer than the timeout value
-                if ((DateTime.Now - server.LastHeartbeat).TotalMilliseconds > _settings.ServerDiscoveryTimeout)
+                if ((DateTime.Now - server.LastHeartbeat).TotalMilliseconds > ModuledNetSettings.Settings.ServerDiscoveryTimeout)
                 {
                     _openServers.TryRemove(serverIP, out _);
-                    _mainThreadActions.Enqueue(() => OnServerListChanged?.Invoke());
+                    QueueOnUpdate(() => OnServerListChanged?.Invoke());
                     return;
                 }
 
@@ -492,16 +503,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
         #endregion
 
-        #region public methods
-
-        /// <summary>
-        /// Retrieves the Settings used for the Sync Client.
-        /// </summary>
-        /// <returns></returns>
-        public static ModuledNetSettings GetModuledNetSettings()
-        {
-            return ModuledNetSettings.GetOrCreateSettings();
-        }
+        #region public
 
         /// <summary>
         /// Resets the Server Discovery. Use this when Exceptions ocurred or the Service Discovery was closed.
@@ -528,7 +530,7 @@ namespace CENTIS.UnityModuledNet.Managing
                 _udpClient.EnableBroadcast = true;
                 _udpClient.ExclusiveAddressUse = false;
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, _settings.DiscoveryPort));
+                _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, ModuledNetSettings.Settings.DiscoveryPort));
 
                 _discoveryThread = new(() => DiscoveryThread()) { IsBackground = true };
                 _discoveryThread.Start();
@@ -629,7 +631,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
         public static void AddModuledNetMessage(ModuledNetMessage message)
         {
-            _mainThreadActions.Enqueue(() =>
+            QueueOnUpdate(() =>
             {
                 ModuledNetMessages.Add(message);
                 OnSyncMessageAdded?.Invoke();

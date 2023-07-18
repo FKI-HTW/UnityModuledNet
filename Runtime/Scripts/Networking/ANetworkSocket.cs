@@ -17,8 +17,6 @@ namespace CENTIS.UnityModuledNet.Networking
     {
         #region protected fields
 
-        protected static readonly ModuledNetSettings _settings = ModuledNetSettings.GetOrCreateSettings();
-
         protected IPAddress _localIP;
         protected int _port;
         protected UdpClient _udpClient;
@@ -235,8 +233,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
         protected static void DebugByteMessage(byte[] bytes, string msg, bool inBinary = false)
         {
-            if (!ModuledNetManager.IsDebug)
-                return;
+            if (!ModuledNetSettings.Settings.Debug) return;
 
             foreach (byte d in bytes)
                 msg += Convert.ToString(d, inBinary ? 2 : 16).PadLeft(inBinary ? 8 : 2, '0') + " ";

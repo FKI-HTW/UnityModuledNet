@@ -84,20 +84,20 @@ namespace CENTIS.UnityModuledNet.Networking
                     return;
                 }
 
-                if (_settings.Username.Length > 100 || !IsASCIIString(_settings.Username))
+                if (ModuledNetSettings.Settings.Username.Length > 100 || !IsASCIIString(ModuledNetSettings.Settings.Username))
                 {
-                    Debug.LogError("The Username must be shorter than 100 characters and be an ASCII string!");
+                    Debug.LogError("The UserName must be shorter than 100 characters and be an ASCII string!");
                     onConnectionEstablished?.Invoke(false);
                     return;
                 }
 
-                _tmpUsername = _settings.Username;
-                _tmpColor = _settings.Color;
+                _tmpUsername = ModuledNetSettings.Settings.Username;
+                _tmpColor = ModuledNetSettings.Settings.Color;
 
                 ConnectionStatus = ConnectionStatus.IsConnecting;
 
                 _localIP = IPAddress.Parse(ModuledNetManager.LocalIP);
-                _port = _settings.Port;
+                _port = ModuledNetSettings.Settings.Port;
                 _udpClient = new(_port);
 
                 _listenerThread = new(() => ListenerThread(onConnectionEstablished)) { IsBackground = true };
@@ -247,7 +247,7 @@ namespace CENTIS.UnityModuledNet.Networking
             {
                 try
                 {   // get packet ip headers
-                    IPEndPoint receiveEndpoint = new(IPAddress.Any, _settings.Port);
+                    IPEndPoint receiveEndpoint = new(IPAddress.Any, _port);
                     byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
                     IPAddress sender = receiveEndpoint.Address;
                     if (!sender.Equals(_serverIP))
@@ -670,11 +670,11 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <returns></returns>
         private async Task ResendSliceData((ushort, ushort) sequence, int retries = 0)
         {
-            await Task.Delay((int)(_settings.RTT * 1.25f));
+            await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
             if (_sendChunksBuffer.TryGetValue(sequence, out byte[] data))
             {
                 _udpClient.Send(data, data.Length, new(_serverIP, _port));
-                if (retries < _settings.MaxNumberResendReliablePackets)
+                if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
                     _ = ResendSliceData(sequence, retries + 1);
                 else
                     DisconnectFromServer();
@@ -691,11 +691,11 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <returns></returns>
         private async Task ResendPacketData(ushort sequence, int retries = 0)
         {
-            await Task.Delay((int)(_settings.RTT * 1.25f));
+            await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
             if (_sendPacketsBuffer.TryGetValue(sequence, out byte[] data))
             {
                 _udpClient.Send(data, data.Length, new(_serverIP, _port));
-                if (retries < _settings.MaxNumberResendReliablePackets)
+                if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
                     _ = ResendPacketData(sequence, retries + 1);
                 else
                     DisconnectFromServer();
@@ -712,7 +712,7 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <returns></returns>
         private async Task TimeoutEstablishConnection(Action<bool> onConnectionEstablished)
         {
-            await Task.Delay(_settings.ServerConnectionTimeout);
+            await Task.Delay(ModuledNetSettings.Settings.ServerConnectionTimeout);
             if (!IsConnected)
             {
                 Dispose();
@@ -761,7 +761,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 throw new Exception("This function only supports Data Packets!");
             }
 
-            int mtu = _settings.MTU;
+            int mtu = ModuledNetSettings.Settings.MTU;
             if (data.Length > mtu && !IsReliableSequence(type))
             {
                 Debug.LogError($"Only Reliable Packets can be larger than the MTU ({mtu} Bytes)!");
