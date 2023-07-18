@@ -452,6 +452,11 @@ namespace CENTIS.UnityModuledNet.Managing
             {
                 module.OnReceiveData(client, data);
             }
+            else
+            {
+                Debug.LogError($"Received data for an unregistered module! Module ID: {moduleID} by client '{client}', " +
+                    $"There are {_registeredModules.Count} modules registered right now.");
+            }
         }
 
         #endregion
