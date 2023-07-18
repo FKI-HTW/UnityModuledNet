@@ -10,8 +10,16 @@ namespace CENTIS.UnityModuledNet
     {
         #region private members
 
-        private static ModuledNetSettings _settings;
-        private Editor _settingsEditor;
+        private static Editor _settingsEditor = null;
+        public static Editor SettingsEditor
+        {
+            get
+            {
+                if (_settingsEditor == null)
+                    _settingsEditor = Editor.CreateEditor(ModuledNetSettings.Settings);
+                return _settingsEditor;
+            }
+        }
 
         private Vector2 _serversViewPos;
         private Vector2 _clientsViewPos;
@@ -49,16 +57,9 @@ namespace CENTIS.UnityModuledNet
 
 		public void OnEnable()
 		{
-            _settings = ModuledNetSettings.GetOrCreateSettings();
-            _settingsEditor = Editor.CreateEditor(_settings);
-
             ModuledNetManager.OnSyncMessageAdded += AddSyncMessage;
             ModuledNetManager.OnConnectedClientListChanged += Repaint;
             ModuledNetManager.OnServerListChanged += Repaint;
-        }
-
-        public void CreateGUI()
-		{
         }
 
         private void OnDisable()
@@ -73,7 +74,7 @@ namespace CENTIS.UnityModuledNet
         {
             if(EditorApplication.isCompiling)
             {
-                GUILayout.Label("is compiling", EditorStyles.largeLabel);
+                GUILayout.Label("The editor is compiling...\nSettings will show up after recompile.", EditorStyles.largeLabel);
                 return;
             }
 
@@ -83,16 +84,16 @@ namespace CENTIS.UnityModuledNet
                 GUILayout.Label("ModuledNet", EditorStyles.largeLabel);
 
                 // user settings
-                _settingsEditor.OnInspectorGUI();
+                SettingsEditor.OnInspectorGUI();
 
                 // module settings
-                if (_settings.ModuleSettings.Count > 0)
+                if (ModuledNetSettings.Settings.ModuleSettings.Count > 0)
                 {
                     EditorGUILayout.Space();
                     EditorGUILayout.Space();
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     GUILayout.Label("Module settings", EditorStyles.boldLabel);
-                    foreach (var moduleSettings in _settings.ModuleSettings)
+                    foreach (var moduleSettings in ModuledNetSettings.Settings.ModuleSettings)
                     {
                         moduleSettings.DrawModuleSettingsFoldout();
                     }
@@ -116,7 +117,7 @@ namespace CENTIS.UnityModuledNet
                 {
                     // open servers list
                     EditorGUILayout.BeginHorizontal();
-                    GUILayout.Label($"Open Servers: {ModuledNetManager.OpenServers?.Count}");
+                    GUILayout.Label($"Open Server Count: {ModuledNetManager.OpenServers?.Count}");
                     GUILayout.FlexibleSpace();
                     if (GUILayout.Button(new GUIContent(_newServerOptionsIsVisible ? "-" : "+", "Create a New Server"),
                         GUILayout.Width(20), GUILayout.Height(20)))
@@ -149,8 +150,9 @@ namespace CENTIS.UnityModuledNet
                         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                         {
                             GUILayout.Label("Create a New Server", EditorStyles.boldLabel);
-                            _newServerName = EditorGUILayout.TextField("Servername:", _newServerName);
-                            _settings.MaxNumberClients = (byte)EditorGUILayout.IntField("Max Clients:", _settings.MaxNumberClients);
+                            _newServerName = EditorGUILayout.TextField(new GUIContent("Server Name", "The name of the server."), _newServerName);
+                            ModuledNetSettings.Settings.MaxNumberClients = (byte)EditorGUILayout.IntField(
+                                new GUIContent("Max Clients", "The number of clients that can connect to the server."), ModuledNetSettings.Settings.MaxNumberClients);
                             if (GUILayout.Button(new GUIContent("Create")))
                                 ModuledNetManager.CreateServer(_newServerName);
                         }

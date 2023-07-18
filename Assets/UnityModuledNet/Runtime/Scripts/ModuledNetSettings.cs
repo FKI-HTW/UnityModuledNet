@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using CENTIS.UnityModuledNet.Managing;
 using CENTIS.UnityModuledNet.Modules;
 using System.Linq;
+using System.Threading.Tasks;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -15,24 +16,37 @@ namespace CENTIS.UnityModuledNet
     [Serializable]
     public class ModuledNetSettings : ScriptableObject
     {
+        private static ModuledNetSettings _settings = null;
+        public static ModuledNetSettings Settings
+        {
+            get
+            {
+                if (_settings == null)
+                    _settings = GetOrCreateSettings<ModuledNetSettings>(_settingsName);
+                return _settings;
+            }
+        }
+
         protected const string _settingsFilePath = "Assets/Resources/";
         protected const string _settingsName = "";
         protected const string _settingsNameFSuffix = "ModuledNetSettings";
         protected const string _settingsNameFileType = ".asset";
-
-        private static ModuledNetSettings cachedSettings;
 
         private static readonly Dictionary<Type, IModuleSettings> _moduleSettings = new();
         public HashSet<IModuleSettings> ModuleSettings => _moduleSettings.Values.ToHashSet();
 
         // settings
         // user settings
-        public string Username = "Username";
-        public Color32 Color = new(255, 255, 255, 255);
-        public bool ReconnectAfterRecompile = false;
+        [SerializeField] private string username = "Username";
+        [SerializeField] private Color32 color = new(255, 255, 255, 255);
+        [SerializeField] private bool reconnectAfterRecompile = false;
+
+        public string Username { get => username; set => username = value; }
+        public Color32 Color { get => color; set => color = value; }
+        public bool ReconnectAfterRecompile { get => reconnectAfterRecompile; set => reconnectAfterRecompile = value; }
 
         // server settings
-        private byte _maxNumberClients = 253;
+        [SerializeField] private byte _maxNumberClients = 253;
         public byte MaxNumberClients
         {
             get => _maxNumberClients;
@@ -55,24 +69,29 @@ namespace CENTIS.UnityModuledNet
         public int MaxNumberResendReliablePackets { get => maxNumberResendReliablePackets; set => maxNumberResendReliablePackets = value; }
 
         // debug settings
+        [SerializeField] private bool debug = false;
         [SerializeField] private int port = 26822;
         [SerializeField] private int discoveryPort = 26823;
         [SerializeField] private int mtu = 1200;
         [SerializeField] private int rtt = 200;
 
-        public int Port { get => port; set => port = value; }
+        public bool Debug { get => debug; set => debug = value; }
+        public int Port
+        {
+            get => port;
+            set => port = value;
+        }
         public int DiscoveryPort { get => discoveryPort; set => discoveryPort = value; }
         public int MTU
         {
             get => mtu;
             set
             {
-                if (mtu == value)
-                    return;
+                if (mtu == value) return;
 
                 if (ModuledNetManager.IsConnected)
                 {
-                    Debug.LogError("The MTU should not be changed while connected to a Server!");
+                    UnityEngine.Debug.LogError("The MTU should not be changed while connected to a Server!");
                     return;
                 }
 
@@ -84,12 +103,11 @@ namespace CENTIS.UnityModuledNet
             get => rtt;
             set
             {
-                if (rtt == value)
-                    return;
+                if (rtt == value) return;
 
                 if (ModuledNetManager.IsConnected)
                 {
-                    Debug.LogError("The RTT should not be changed while connected to a Server!");
+                    UnityEngine.Debug.LogError("The RTT should not be changed while connected to a Server!");
                     return;
                 }
 
@@ -117,11 +135,6 @@ namespace CENTIS.UnityModuledNet
             return _settingsFilePath + settingsName + _settingsNameFSuffix + _settingsNameFileType;
         }
 
-        public static ModuledNetSettings GetOrCreateSettings()
-        {
-            return cachedSettings ?? (cachedSettings = GetOrCreateSettings<ModuledNetSettings>(_settingsName, _settingsFilePath));
-        }
-
         public static T GetOrCreateSettings<T>(string settingsName, string path = _settingsFilePath) where T : ScriptableObject
         {
             T settings = Resources.Load<T>(Path.GetFileNameWithoutExtension(settingsName + _settingsNameFSuffix));
@@ -130,6 +143,17 @@ namespace CENTIS.UnityModuledNet
 #if UNITY_EDITOR
             if (!settings)
             {
+                if (EditorApplication.isCompiling)
+                {
+                    UnityEngine.Debug.LogError("Can not load settings when editor is compiling!");
+                    return null;
+                }
+                if (EditorApplication.isUpdating)
+                {
+                    UnityEngine.Debug.LogError("Can not load settings when editor is updating!");
+                    return null;
+                }
+
                 settings = AssetDatabase.LoadAssetAtPath<T>(fullPath);
             }
             if (!settings)
@@ -149,6 +173,7 @@ namespace CENTIS.UnityModuledNet
                 AssetDatabase.CreateAsset(settings, fullPath);
                 AssetDatabase.SaveAssets();
             }
+
 #else
 			if (!settings)
 			{
@@ -165,31 +190,27 @@ namespace CENTIS.UnityModuledNet
         }
     }
 
+
 #if UNITY_EDITOR && UNITY_IMGUI
-	internal class ModuledNetSettingsProvider : SettingsProvider
-	{
-		private ModuledNetSettings _settings;
-		private Editor _settingsEditor;
+    internal class ModuledNetSettingsProvider : SettingsProvider
+    {
+        private Editor _settingsEditor;
 
-		public override void OnGUI(string searchContext)
-		{
-			if (!_settings)
-			{
-				_settings = ModuledNetSettings.GetOrCreateSettings();
-				_settingsEditor = Editor.CreateEditor(_settings);
-			}
-			_settingsEditor.OnInspectorGUI();
-		}
+        public override void OnGUI(string searchContext)
+        {
+            if (!_settingsEditor)
+                _settingsEditor = Editor.CreateEditor(ModuledNetSettings.Settings);
+            _settingsEditor.OnInspectorGUI();
+        }
 
-		[SettingsProvider]
-		public static SettingsProvider CreateSyncSettingsProvider()
-		{
-			ModuledNetSettings.GetOrCreateSettings();
-			return new ModuledNetSettingsProvider("Project/ModuledNet", SettingsScope.Project);
-		}
+        [SettingsProvider]
+        public static SettingsProvider CreateSyncSettingsProvider()
+        {
+            return new ModuledNetSettingsProvider("Project/ModuledNet", SettingsScope.Project);
+        }
 
-		public ModuledNetSettingsProvider(string path, SettingsScope scopes, IEnumerable<string> keywords = null) 
-			: base(path, scopes, keywords) { }
-	}
+        public ModuledNetSettingsProvider(string path, SettingsScope scopes, IEnumerable<string> keywords = null)
+            : base(path, scopes, keywords) { }
+    }
 #endif
 }

@@ -70,16 +70,16 @@ namespace CENTIS.UnityModuledNet.Networking
                     return;
                 }
 
-                if (ServerName.Length > 100 || _settings.Username.Length > 100)
+                if (ServerName.Length > 100 || ModuledNetSettings.Settings.Username.Length > 100)
                 {
-                    Debug.LogError($"The Servername and Username must be shorter than 100 Characters!");
+                    Debug.LogError($"The Servername and UserName must be shorter than 100 Characters!");
                     onConnectionEstablished?.Invoke(false);
                     return;
                 }
 
-                if (!IsASCIIString(ServerName) || !IsASCIIString(_settings.Username))
+                if (!IsASCIIString(ServerName) || !IsASCIIString(ModuledNetSettings.Settings.Username))
                 {
-                    Debug.LogError($"The Servername and Username must be ASCII Strings!");
+                    Debug.LogError($"The Servername and UserName must be ASCII Strings!");
                     onConnectionEstablished?.Invoke(false);
                     return;
                 }
@@ -87,11 +87,11 @@ namespace CENTIS.UnityModuledNet.Networking
                 ConnectionStatus = ConnectionStatus.IsConnecting;
 
                 _localIP = IPAddress.Parse(ModuledNetManager.LocalIP);
-                _port = _settings.Port;
+                _port = ModuledNetSettings.Settings.Port;
                 _udpClient = new(_port);
 
-                ServerInformation = new(_localIP, ServerName, _settings.MaxNumberClients);
-                ClientInformation = new(1, _settings.Username, _settings.Color);
+                ServerInformation = new(_localIP, ServerName, ModuledNetSettings.Settings.MaxNumberClients);
+                ClientInformation = new(1, ModuledNetSettings.Settings.Username, ModuledNetSettings.Settings.Color);
 
                 _listenerThread = new(() => ListenerThread()) { IsBackground = true };
                 _listenerThread.Start();
@@ -244,7 +244,7 @@ namespace CENTIS.UnityModuledNet.Networking
             {
                 try
                 {   // get packet ip headers
-                    IPEndPoint receiveEndpoint = new(IPAddress.Any, _settings.Port);
+                    IPEndPoint receiveEndpoint = new(IPAddress.Any, ModuledNetSettings.Settings.Port);
                     byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
                     IPAddress sender = receiveEndpoint.Address;
                     if (sender.Equals(_localIP))
@@ -554,7 +554,7 @@ namespace CENTIS.UnityModuledNet.Networking
         {
             try
             {
-                int discoveryPort = _settings.DiscoveryPort;
+                int discoveryPort = ModuledNetSettings.Settings.DiscoveryPort;
                 UdpClient heartbeatClient = new();
                 heartbeatClient.EnableBroadcast = true;
                 heartbeatClient.ExclusiveAddressUse = false;
@@ -568,7 +568,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     ServerInformationPacket heartbeat = new(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, (byte)(_connectedClients.Count + 1));
                     byte[] heartbeatBytes = heartbeat.Serialize();
                     heartbeatClient.Send(heartbeatBytes, heartbeatBytes.Length, remoteEndpoint);
-                    Thread.Sleep(_settings.ServerHeartbeatDelay);
+                    Thread.Sleep(ModuledNetSettings.Settings.ServerHeartbeatDelay);
                 }
             }
             catch (Exception ex)
@@ -690,12 +690,12 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <returns></returns>
         private async Task ResendSliceData(IPAddress clientIP, (ushort, ushort) sequence, int retries = 0)
         {
-            await Task.Delay((int)(_settings.RTT * 1.25f));
+            await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
             if (_connectedClients.TryGetValue(clientIP, out ClientInformationSocket client)
                 && client.SendChunksBuffer.TryGetValue(sequence, out byte[] data))
             {
                 _udpClient.Send(data, data.Length, new(client.IP, _port));
-                if (retries < _settings.MaxNumberResendReliablePackets)
+                if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
                     _ = ResendSliceData(clientIP, sequence, retries + 1);
                 else
                     RemoveClient(client.ID, true);
@@ -712,12 +712,12 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <returns></returns>
         private async Task ResendPacketData(IPAddress clientIP, ushort sequence, int retries = 0)
         {
-            await Task.Delay((int)(_settings.RTT * 1.25f));
+            await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
             if (_connectedClients.TryGetValue(clientIP, out ClientInformationSocket client)
                 && client.SendPacketsBuffer.TryGetValue(sequence, out byte[] data))
             {
                 _udpClient.Send(data, data.Length, new(client.IP, _port));
-                if (retries < _settings.MaxNumberResendReliablePackets)
+                if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
                     _ = ResendPacketData(clientIP, sequence, retries + 1);
                 else
                     RemoveClient(client.ID, true);
@@ -890,7 +890,7 @@ namespace CENTIS.UnityModuledNet.Networking
             if (!IsDataPacket(type))
                 throw new Exception("This function only supports Data Packets!");
 
-            int mtu = _settings.MTU;
+            var mtu = ModuledNetSettings.Settings.MTU;
             if (data.Length > mtu && !IsReliableSequence(type))
             {
                 Debug.LogError($"Only Reliable Packets can be larger than the MTU ({mtu} Bytes)!");

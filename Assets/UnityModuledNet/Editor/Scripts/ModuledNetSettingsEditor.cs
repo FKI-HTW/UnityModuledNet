@@ -8,38 +8,29 @@ namespace CENTIS.UnityModuledNet
     [CanEditMultipleObjects]
     internal class ModuledNetSettingsEditor : Editor
     {
-        private ModuledNetSettings _settings;
-
         private bool _packetSettingsIsVisible = false;
         private bool _debugSettingsIsVisible = false;
-
-        private void OnEnable()
-        {
-            _settings = ModuledNetSettings.GetOrCreateSettings();
-        }
-
-        private void OnValidate()
-        {
-            AssetDatabase.SaveAssets();
-        }
 
         // TODO : add descriptions to labels, was too lazy
         public override void OnInspectorGUI()
         {
+            var settings = ModuledNetSettings.Settings;
+
             // user settings
-            _settings.Username = EditorGUILayout.TextField("Username:", _settings.Username);
-            _settings.Color = EditorGUILayout.ColorField("Color:", _settings.Color);
-            _settings.ReconnectAfterRecompile = EditorGUILayout.Toggle("Reconnect after recompile:", _settings.ReconnectAfterRecompile);
+            settings.Username = EditorGUILayout.TextField(new GUIContent("Username", "The username of the client."), settings.Username);
+            settings.Color = EditorGUILayout.ColorField(new GUIContent("Color", "The color of the client."), settings.Color);
+            settings.ReconnectAfterRecompile = EditorGUILayout.Toggle(
+                new GUIContent("Reconnect after recompile", " Should the client reconnect after recompile?"), settings.ReconnectAfterRecompile);
 
             // packet frequency settings
             _packetSettingsIsVisible = EditorGUILayout.Foldout(_packetSettingsIsVisible, "Packet Settings", EditorStyles.foldoutHeader);
             if (_packetSettingsIsVisible)
             {
                 EditorGUI.indentLevel++;
-                _settings.ServerConnectionTimeout = EditorGUILayout.IntField("Connection Timeout:", _settings.ServerConnectionTimeout);
-                _settings.ServerHeartbeatDelay = EditorGUILayout.IntField("Heartbeat Delay:", _settings.ServerHeartbeatDelay);
-                _settings.ServerDiscoveryTimeout = EditorGUILayout.IntField("ServerDiscovery Timeout:", _settings.ServerDiscoveryTimeout);
-                _settings.MaxNumberResendReliablePackets = EditorGUILayout.IntField("Number of Resends of Reliable Packets: ", _settings.MaxNumberResendReliablePackets);
+                settings.ServerConnectionTimeout = EditorGUILayout.IntField("Connection Timeout:", settings.ServerConnectionTimeout);
+                settings.ServerHeartbeatDelay = EditorGUILayout.IntField("Heartbeat Delay:", settings.ServerHeartbeatDelay);
+                settings.ServerDiscoveryTimeout = EditorGUILayout.IntField("ServerDiscovery Timeout:", settings.ServerDiscoveryTimeout);
+                settings.MaxNumberResendReliablePackets = EditorGUILayout.IntField("Number of Resends of Reliable Packets: ", settings.MaxNumberResendReliablePackets);
                 EditorGUI.indentLevel--;
             }
 
@@ -48,22 +39,22 @@ namespace CENTIS.UnityModuledNet
             if (_debugSettingsIsVisible)
             {
                 EditorGUI.indentLevel++;
-                ModuledNetManager.IsDebug = EditorGUILayout.Toggle(new GUIContent("Is Debug:", "Allows the display of debug messages."), ModuledNetManager.IsDebug);
+                settings.Debug = EditorGUILayout.Toggle(new GUIContent("Is Debug:", "Allows the display of debug messages."), settings.Debug);
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField("Local IP:", ModuledNetManager.LocalIP);
                 if (GUILayout.Button("Update IP Address"))
                     ModuledNetManager.UpdateIPAddress();
                 EditorGUILayout.EndHorizontal();
-                _settings.Port = EditorGUILayout.IntField("Port:", _settings.Port);
-                _settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", _settings.DiscoveryPort);
-                _settings.MTU = EditorGUILayout.IntField("MTU:", _settings.MTU);
-                _settings.RTT = EditorGUILayout.IntField("RTT:", _settings.RTT);
+                settings.Port = EditorGUILayout.IntField("Port:", settings.Port);
+                settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", settings.DiscoveryPort);
+                settings.MTU = EditorGUILayout.IntField("MTU:", settings.MTU);
+                settings.RTT = EditorGUILayout.IntField("RTT:", settings.RTT);
                 if (GUILayout.Button("Reset Server Discovery"))
                     ModuledNetManager.ResetServerDiscovery();
                 EditorGUI.indentLevel--;
             }
 
-            EditorUtility.SetDirty(_settings);
+            EditorUtility.SetDirty(settings);
         }
     }
 }
