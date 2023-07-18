@@ -11,6 +11,8 @@ namespace CENTIS.UnityModuledNet
         private bool _packetSettingsIsVisible = false;
         private bool _debugSettingsIsVisible = false;
 
+        private string[] cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(true).ToArray();
+
         // TODO : add descriptions to labels, was too lazy
         public override void OnInspectorGUI()
         {
@@ -39,12 +41,19 @@ namespace CENTIS.UnityModuledNet
             if (_debugSettingsIsVisible)
             {
                 EditorGUI.indentLevel++;
-                settings.Debug = EditorGUILayout.Toggle(new GUIContent("Is Debug:", "Allows the display of debug messages."), settings.Debug);
+                settings.Debug = EditorGUILayout.Toggle(new GUIContent("Debug", "Allows the display of debug messages."), settings.Debug);
+
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Local IP:", ModuledNetManager.LocalIP);
-                if (GUILayout.Button("Update IP Address"))
-                    ModuledNetManager.UpdateIPAddress();
+                settings.IPAddressIndex = EditorGUILayout.Popup("IP Address", settings.IPAddressIndex, cachedIpAddresses);
+                if (GUILayout.Button("Update IP Addresses"))
+                    cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
+                var cachedAllowVirtualIPs = settings.AllowVirtualIPs;
+                settings.AllowVirtualIPs = EditorGUILayout.Toggle("Virtual IPs ", settings.AllowVirtualIPs);
+                if (cachedAllowVirtualIPs != settings.AllowVirtualIPs)
+                    cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
+                settings.IPAddressIndex = Mathf.Clamp(settings.IPAddressIndex, 0, cachedIpAddresses.Length - 1);
                 EditorGUILayout.EndHorizontal();
+
                 settings.Port = EditorGUILayout.IntField("Port:", settings.Port);
                 settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", settings.DiscoveryPort);
                 settings.MTU = EditorGUILayout.IntField("MTU:", settings.MTU);
