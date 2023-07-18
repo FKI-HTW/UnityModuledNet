@@ -24,13 +24,18 @@ namespace CENTIS.UnityModuledNet.Managing
     {
         #region public properties
 
+        private static int _cachedIPAddressIndex = -1;
+        private static string _cachedIpAddress = "";
         public static string LocalIP
         {
-            get => _localIP;
-            set
+            get
             {
-                if (!IsConnected)
-                    _localIP = value;
+                if (_cachedIPAddressIndex != ModuledNetSettings.Settings.IPAddressIndex)
+                {
+                    _cachedIPAddressIndex = ModuledNetSettings.Settings.IPAddressIndex;
+                    _cachedIpAddress = GetLocalIPAddress(_cachedIPAddressIndex, false);
+                }
+                return _cachedIpAddress;
             }
         }
 
@@ -168,13 +173,11 @@ namespace CENTIS.UnityModuledNet.Managing
 
         #region private fields
 
-        private static string _localIP = GetLocalIPAddress();
-
         private readonly static ConcurrentDictionary<IPAddress, OpenServerInformation> _openServers = new();
 
         private readonly static ConcurrentDictionary<byte[], ModuledNetModule> _registeredModules = new(new ByteArrayComparer());
 
-        private readonly static ConcurrentQueue<Action> mainThreadDispatchQueue = new ();
+        private readonly static ConcurrentQueue<Action> mainThreadDispatchQueue = new();
 
 
         private static UdpClient _udpClient;
@@ -338,31 +341,39 @@ namespace CENTIS.UnityModuledNet.Managing
         private static void FireClientDisconnectedEvent(byte id) => OnClientDisconnected?.Invoke(id);
         private static void FireConnectedClientListChangedEvent() => OnConnectedClientListChanged?.Invoke();
 
-        private static string GetLocalIPAddress()
+        private static string GetLocalIPAddress(int index = 0, bool checkForGatewayAddress = true)
+        {
+            var ipAdresses = GetLocalIPAddresses(checkForGatewayAddress);
+
+            if (ipAdresses == null || ipAdresses.Count == 0)
+                return string.Empty;
+
+            return ipAdresses[Mathf.Clamp(index, 0, ipAdresses.Count - 1)];
+        }
+        public static List<string> GetLocalIPAddresses(bool checkForGatewayAddress = true)
         {
             // taken from https://stackoverflow.com/a/24814027
-            string ipAddress = "";
+            List<string> ipAddresses = new();
             foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (item.OperationalStatus == OperationalStatus.Up)
                 {   // Fetch the properties of this adapter
                     IPInterfaceProperties adapterProperties = item.GetIPProperties();
                     // Check if the gateway adress exist, if not its most likley a virtual network or smth
-                    if (adapterProperties.GatewayAddresses.FirstOrDefault() != null)
+                    if (checkForGatewayAddress == false || adapterProperties.GatewayAddresses.FirstOrDefault() != null)
                     {   // Iterate over each available unicast adresses
                         foreach (UnicastIPAddressInformation ip in adapterProperties.UnicastAddresses)
                         {   // If the IP is a local IPv4 adress
                             if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
                             {
-                                ipAddress = ip.Address.ToString();
+                                ipAddresses.Add(ip.Address.ToString());
                                 break;
                             }
                         }
                     }
                 }
-                if (ipAddress != "") { break; }
             }
-            return ipAddress;
+            return ipAddresses;
         }
 
         private static void DiscoveryThread()
@@ -524,7 +535,7 @@ namespace CENTIS.UnityModuledNet.Managing
                     _discoveryThread.Join();
                 }
 
-                UpdateIPAddress();
+                _cachedIPAddressIndex = -1;
 
                 _udpClient = new();
                 _udpClient.EnableBroadcast = true;
@@ -567,11 +578,6 @@ namespace CENTIS.UnityModuledNet.Managing
                 }
                 return IsServerDiscoveryActive = false;
             }
-        }
-
-        public static void UpdateIPAddress()
-        {
-            LocalIP = GetLocalIPAddress();
         }
 
         /// <summary>
