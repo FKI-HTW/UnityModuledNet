@@ -1,4 +1,6 @@
 using UnityEngine;
+using System;
+using CENTIS.UnityModuledNet.Managing;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -20,7 +22,10 @@ namespace CENTIS.UnityModuledNet.Modules
     ///         _settings = ModuledNetSettings.GetOrCreateSettings<SceneSyncSettings>("Scene");
     /// }
     /// </summary>
-    [System.Serializable, InitializeOnLoad]
+    [Serializable]
+#if UNITY_EDITOR
+    [InitializeOnLoad]
+#endif
     public abstract class ModuleSettings<T> : ScriptableObject, IModuleSettings where T : ModuledNetModule, new()
     {
         private bool _settingsVisibleInGUI = false;
@@ -35,7 +40,7 @@ namespace CENTIS.UnityModuledNet.Modules
             set
             {
                 _isModuleActive = value;
-                if (_isModuleActive) InstatiateModule();
+                if (_isModuleActive) InstantiateModule();
                 else _module = null;
             }
         }
@@ -47,18 +52,19 @@ namespace CENTIS.UnityModuledNet.Modules
         protected ModuleSettings()
         {
 #if UNITY_EDITOR
-            AssemblyReloadEvents.afterAssemblyReload += InstatiateModule;
+            ModuledNetManager.QueueOnUpdate(() => InstantiateModule());
+            ModuledNetManager.QueueOnUpdate(() => AssemblyReloadEvents.afterAssemblyReload += InstantiateModule);
 #endif
         }
 
         ~ModuleSettings()
         {
 #if UNITY_EDITOR
-            AssemblyReloadEvents.afterAssemblyReload -= InstatiateModule;
+            ModuledNetManager.QueueOnUpdate(() => AssemblyReloadEvents.afterAssemblyReload -= InstantiateModule);
 #endif
         }
 
-        private void InstatiateModule()
+        private void InstantiateModule()
         {
             if (_module == null && IsModuleActive) _module = new T();
         }
