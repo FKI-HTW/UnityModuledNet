@@ -25,15 +25,18 @@ namespace CENTIS.UnityModuledNet.Managing
         #region public properties
 
         private static int _cachedIPAddressIndex = -1;
-        private static string _cachedIpAddress = "";
+        private static string _cachedIpAddress = string.Empty;
         public static string LocalIP
         {
             get
             {
                 if (_cachedIPAddressIndex != ModuledNetSettings.Settings.IPAddressIndex)
+                    _cachedIpAddress = string.Empty;
+
+                if (string.IsNullOrEmpty(_cachedIpAddress))
                 {
-                    _cachedIPAddressIndex = ModuledNetSettings.Settings.IPAddressIndex;
-                    _cachedIpAddress = GetLocalIPAddress(_cachedIPAddressIndex, false);
+                    _cachedIPAddressIndex = Mathf.Clamp(ModuledNetSettings.Settings.IPAddressIndex, 0, ModuledNetSettings.Settings.IPAddressIndex);
+                    _cachedIpAddress = GetLocalIPAddress(_cachedIPAddressIndex, !ModuledNetSettings.Settings.AllowVirtualIPs);
                 }
                 return _cachedIpAddress;
             }
@@ -374,6 +377,12 @@ namespace CENTIS.UnityModuledNet.Managing
                 }
             }
             return ipAddresses;
+        }
+
+        public static void SetIPAddressDirty()
+        {
+            _cachedIPAddressIndex = -1;
+            _cachedIpAddress = string.Empty;
         }
 
         private static void DiscoveryThread()
