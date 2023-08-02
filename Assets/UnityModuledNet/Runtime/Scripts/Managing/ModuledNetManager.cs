@@ -28,12 +28,12 @@ namespace CENTIS.UnityModuledNet.Managing
         private static string _cachedIpAddress = "";
         public static string LocalIP
         {
-            get
-            {
-                if (_cachedIPAddressIndex != ModuledNetSettings.Settings.IPAddressIndex)
+			get
+			{
+				if (_cachedIPAddressIndex != ModuledNetSettings.Settings.IPAddressIndex)
                 {
                     _cachedIPAddressIndex = ModuledNetSettings.Settings.IPAddressIndex;
-                    _cachedIpAddress = GetLocalIPAddress(_cachedIPAddressIndex, false);
+                    _cachedIpAddress = GetLocalIPAddress(_cachedIPAddressIndex);
                 }
                 return _cachedIpAddress;
             }
@@ -344,12 +344,13 @@ namespace CENTIS.UnityModuledNet.Managing
         private static string GetLocalIPAddress(int index = 0, bool checkForGatewayAddress = true)
         {
             var ipAdresses = GetLocalIPAddresses(checkForGatewayAddress);
-
+            
             if (ipAdresses == null || ipAdresses.Count == 0)
                 return string.Empty;
 
             return ipAdresses[Mathf.Clamp(index, 0, ipAdresses.Count - 1)];
         }
+
         public static List<string> GetLocalIPAddresses(bool checkForGatewayAddress = true)
         {
             // taken from https://stackoverflow.com/a/24814027

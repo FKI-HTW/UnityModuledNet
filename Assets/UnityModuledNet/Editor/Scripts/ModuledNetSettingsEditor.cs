@@ -11,7 +11,7 @@ namespace CENTIS.UnityModuledNet
         private bool _packetSettingsIsVisible = false;
         private bool _debugSettingsIsVisible = false;
 
-        private string[] cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(true).ToArray();
+        private string[] cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(false).ToArray();
 
         // TODO : add descriptions to labels, was too lazy
         public override void OnInspectorGUI()
@@ -42,13 +42,13 @@ namespace CENTIS.UnityModuledNet
             {
                 EditorGUI.indentLevel++;
                 settings.Debug = EditorGUILayout.Toggle(new GUIContent("Debug", "Allows the display of debug messages."), settings.Debug);
+                var cachedAllowVirtualIPs = settings.AllowVirtualIPs;
+                settings.AllowVirtualIPs = EditorGUILayout.Toggle("Allow Virtual IPs ", settings.AllowVirtualIPs);
 
                 EditorGUILayout.BeginHorizontal();
                 settings.IPAddressIndex = EditorGUILayout.Popup("IP Address", settings.IPAddressIndex, cachedIpAddresses);
                 if (GUILayout.Button("Update IP Addresses"))
                     cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
-                var cachedAllowVirtualIPs = settings.AllowVirtualIPs;
-                settings.AllowVirtualIPs = EditorGUILayout.Toggle("Virtual IPs ", settings.AllowVirtualIPs);
                 if (cachedAllowVirtualIPs != settings.AllowVirtualIPs)
                     cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
                 settings.IPAddressIndex = Mathf.Clamp(settings.IPAddressIndex, 0, cachedIpAddresses.Length - 1);
