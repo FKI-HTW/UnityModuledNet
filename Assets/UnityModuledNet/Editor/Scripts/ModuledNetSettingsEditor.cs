@@ -11,7 +11,7 @@ namespace CENTIS.UnityModuledNet
         private bool _packetSettingsIsVisible = false;
         private bool _debugSettingsIsVisible = false;
 
-        private string[] cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(false).ToArray();
+        private string[] cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses().ToArray();
 
         // TODO : add descriptions to labels, was too lazy
         public override void OnInspectorGUI()

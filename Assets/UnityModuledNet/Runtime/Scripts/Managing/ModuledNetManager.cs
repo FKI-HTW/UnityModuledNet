@@ -543,10 +543,13 @@ namespace CENTIS.UnityModuledNet.Managing
 
                 _cachedIPAddressIndex = -1;
 
+                IPAddress ip = IPAddress.Parse("239.255.255.251");
+
                 _udpClient = new();
-                _udpClient.EnableBroadcast = true;
-                _udpClient.ExclusiveAddressUse = false;
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ip, IPAddress.Any));
                 _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, ModuledNetSettings.Settings.DiscoveryPort));
 
                 _discoveryThread = new(() => DiscoveryThread()) { IsBackground = true };

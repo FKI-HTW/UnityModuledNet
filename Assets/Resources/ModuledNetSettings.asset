@@ -25,7 +25,6 @@ MonoBehaviour:
   debug: 0
   ipAddressIndex: 0
   allowVirtualIPs: 0
-  port: 26822
   discoveryPort: 26823
   mtu: 1200
   rtt: 200
