@@ -9,6 +9,7 @@ namespace CENTIS.UnityModuledNet
     internal class ModuledNetSettingsEditor : Editor
     {
         private bool _packetSettingsIsVisible = false;
+        private bool _serverDiscoverySettingsIsVisible = false;
         private bool _debugSettingsIsVisible = false;
 
         private string[] cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses().ToArray();
@@ -36,18 +37,29 @@ namespace CENTIS.UnityModuledNet
                 EditorGUI.indentLevel--;
             }
 
+            _serverDiscoverySettingsIsVisible = EditorGUILayout.Foldout(_serverDiscoverySettingsIsVisible, "Server Discovery Settings", EditorStyles.foldoutHeader);
+            if (_serverDiscoverySettingsIsVisible)
+			{
+                EditorGUI.indentLevel++;
+                settings.MulticastAddress = EditorGUILayout.TextField(new GUIContent("Multicast Address:", "The Multicast Address used for the Server Discovery"), settings.MulticastAddress);
+                settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", settings.DiscoveryPort);
+                if (GUILayout.Button("Reset Server Discovery"))
+                    ModuledNetManager.ResetServerDiscovery();
+                EditorGUI.indentLevel--;
+            }
+
             // debug settings
             _debugSettingsIsVisible = EditorGUILayout.Foldout(_debugSettingsIsVisible, "Debug Settings", EditorStyles.foldoutHeader);
             if (_debugSettingsIsVisible)
             {
                 EditorGUI.indentLevel++;
-                settings.Debug = EditorGUILayout.Toggle(new GUIContent("Debug", "Allows the display of debug messages."), settings.Debug);
-                settings.AllowLocalConnection = EditorGUILayout.Toggle(new GUIContent("Allow Local IP", "Allows connection from the local IP."), settings.AllowLocalConnection);
+                settings.Debug = EditorGUILayout.Toggle(new GUIContent("Debug Mode:", "Allows the display of debug messages."), settings.Debug);
+                settings.AllowLocalConnection = EditorGUILayout.Toggle(new GUIContent("Allow Local Connection:", "Allows connection from the local IP."), settings.AllowLocalConnection);
                 var cachedAllowVirtualIPs = settings.AllowVirtualIPs;
-                settings.AllowVirtualIPs = EditorGUILayout.Toggle("Allow Virtual IPs ", settings.AllowVirtualIPs);
+                settings.AllowVirtualIPs = EditorGUILayout.Toggle("Allow Virtual IPs:", settings.AllowVirtualIPs);
 
                 EditorGUILayout.BeginHorizontal();
-                settings.IPAddressIndex = EditorGUILayout.Popup("IP Address", settings.IPAddressIndex, cachedIpAddresses);
+                settings.IPAddressIndex = EditorGUILayout.Popup("Local IP Address:", settings.IPAddressIndex, cachedIpAddresses);
                 if (GUILayout.Button("Update"))
                     cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
                 if (cachedAllowVirtualIPs != settings.AllowVirtualIPs)
@@ -55,11 +67,6 @@ namespace CENTIS.UnityModuledNet
                 settings.IPAddressIndex = Mathf.Clamp(settings.IPAddressIndex, 0, cachedIpAddresses.Length - 1);
                 EditorGUILayout.EndHorizontal();
 
-                EditorGUILayout.BeginHorizontal();
-                settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", settings.DiscoveryPort);
-                if (GUILayout.Button("Reset"))
-                    ModuledNetManager.ResetServerDiscovery();
-                EditorGUILayout.EndHorizontal();
                 settings.MTU = EditorGUILayout.IntField("MTU:", settings.MTU);
                 settings.RTT = EditorGUILayout.IntField("RTT:", settings.RTT);
                 EditorGUI.indentLevel--;

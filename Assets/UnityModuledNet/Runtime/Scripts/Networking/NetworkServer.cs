@@ -554,7 +554,7 @@ namespace CENTIS.UnityModuledNet.Networking
         {
             try
             {
-                IPAddress multicastIP = IPAddress.Parse("239.255.255.150");
+                IPAddress multicastIP = IPAddress.Parse(ModuledNetSettings.Settings.MulticastAddress);
                 IPEndPoint remoteEP = new(multicastIP, ModuledNetSettings.Settings.DiscoveryPort);
 
                 UdpClient heartbeatClient = new();
@@ -579,6 +579,10 @@ namespace CENTIS.UnityModuledNet.Networking
                 {
                     case ThreadAbortException:
                         return;
+                    case FormatException:
+                        Debug.Log("The Server Discovery Multicast IP is not a valid Address!");
+                        _mainThreadActions.Enqueue(() => Dispose());
+                        break;
                     default:
                         _mainThreadActions.Enqueue(() => Dispose());
                         ExceptionDispatchInfo.Capture(ex).Throw();

@@ -70,6 +70,10 @@ namespace CENTIS.UnityModuledNet
 
         // server discovery
         [SerializeField] private int discoveryPort = 26823;
+        [SerializeField] private string multicastAddress = "239.255.255.150";
+
+        public int DiscoveryPort { get => discoveryPort; set => discoveryPort = value; }
+        public string MulticastAddress { get => multicastAddress; set => multicastAddress = value; }
 
         // debug settings
         [SerializeField] private bool debug = false;
@@ -83,7 +87,6 @@ namespace CENTIS.UnityModuledNet
         public bool AllowLocalConnection { get => allowLocalConnection; set => allowLocalConnection = value; }
         public int IPAddressIndex { get => ipAddressIndex; set => ipAddressIndex = value; }
         public bool AllowVirtualIPs { get => allowVirtualIPs; set => allowVirtualIPs = value; }
-        public int DiscoveryPort { get => discoveryPort; set => discoveryPort = value; }
         public int MTU
         {
             get => mtu;

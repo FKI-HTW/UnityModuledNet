@@ -541,7 +541,7 @@ namespace CENTIS.UnityModuledNet.Managing
                     _discoveryThread.Join();
                 }
 
-                IPAddress multicastIP = IPAddress.Parse("239.255.255.150");
+                IPAddress multicastIP = IPAddress.Parse(ModuledNetSettings.Settings.MulticastAddress);
 
                 _udpClient = new();
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
@@ -559,6 +559,9 @@ namespace CENTIS.UnityModuledNet.Managing
             {
                 switch (ex)
                 {
+                    case FormatException:
+                        Debug.LogError("The Server Discovery Multicast IP is not a valid Address!");
+                        break;
                     case SocketException:
                         Debug.LogError("An Error ocurred when accessing the socket. "
                             + "Make sure the port is not occupied by another process!");
@@ -568,9 +571,6 @@ namespace CENTIS.UnityModuledNet.Managing
                         break;
                     case ArgumentNullException:
                         Debug.LogError("The local IP can't be null!");
-                        break;
-                    case FormatException:
-                        Debug.LogError("The local IP is not a valid IP Address!");
                         break;
                     case ThreadStartException:
                         Debug.LogError("An Error ocurred when starting the Threads. Please try again later!");
