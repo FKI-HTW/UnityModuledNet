@@ -554,14 +554,14 @@ namespace CENTIS.UnityModuledNet.Networking
         {
             try
             {
-                IPAddress ip = IPAddress.Parse("239.255.255.251");
+                IPAddress ip = IPAddress.Parse("239.255.255.150");
 
                 Socket heartbeatClient = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                 heartbeatClient.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
                 heartbeatClient.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 heartbeatClient.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                heartbeatClient.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ip, IPAddress.Any));
-                heartbeatClient.Bind(new IPEndPoint(IPAddress.Any, ModuledNetSettings.Settings.DiscoveryPort));
+                heartbeatClient.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ip));
+                heartbeatClient.Bind(new IPEndPoint(_localIP, _port));
                 heartbeatClient.Connect(new IPEndPoint(ip, ModuledNetSettings.Settings.DiscoveryPort));
 
                 while (_disposeCount == 0)
