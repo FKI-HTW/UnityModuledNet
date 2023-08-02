@@ -554,23 +554,22 @@ namespace CENTIS.UnityModuledNet.Networking
         {
             try
             {
-                IPAddress ip = IPAddress.Parse("239.255.255.150");
+                IPAddress multicastIP = IPAddress.Parse("239.255.255.150");
+                IPEndPoint remoteEP = new(multicastIP, ModuledNetSettings.Settings.DiscoveryPort);
 
-                Socket heartbeatClient = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                heartbeatClient.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
-                heartbeatClient.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                heartbeatClient.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                heartbeatClient.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ip));
-                heartbeatClient.Bind(new IPEndPoint(_localIP, _port));
-                heartbeatClient.Connect(new IPEndPoint(ip, ModuledNetSettings.Settings.DiscoveryPort));
+                UdpClient heartbeatClient = new();
+                heartbeatClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
+                heartbeatClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                heartbeatClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
+                heartbeatClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(multicastIP, _localIP));
+                heartbeatClient.Client.Bind(new IPEndPoint(_localIP, _port));
 
                 while (_disposeCount == 0)
                 {   // send heartbeat used for discovery until server is closed
                     // TODO : only recalculate if connected clients changed
                     ServerInformationPacket heartbeat = new(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, (byte)(_connectedClients.Count + 1));
                     byte[] heartbeatBytes = heartbeat.Serialize();
-                    heartbeatClient.Send(heartbeatBytes, heartbeatBytes.Length, SocketFlags.None);
-                    Debug.Log("send");
+                    heartbeatClient.Send(heartbeatBytes, heartbeatBytes.Length, remoteEP);
                     Thread.Sleep(ModuledNetSettings.Settings.ServerHeartbeatDelay);
                 }
             }

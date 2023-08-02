@@ -388,7 +388,7 @@ namespace CENTIS.UnityModuledNet.Managing
                     // get packet ip headers
                     byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
                     IPAddress sender = receiveEndpoint.Address;
-                    if (sender.Equals(IP))
+                    if (sender.Equals(IP) && !ModuledNetSettings.Settings.AllowLocalConnection)
                         continue;
 
                     // get packet type without chunked packet bit
@@ -541,14 +541,14 @@ namespace CENTIS.UnityModuledNet.Managing
                     _discoveryThread.Join();
                 }
 
-                IPAddress ip = IPAddress.Parse("239.255.255.150");
+                IPAddress multicastIP = IPAddress.Parse("239.255.255.150");
 
                 _udpClient = new();
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(ip));
-                _udpClient.Connect(new IPEndPoint(ip, ModuledNetSettings.Settings.DiscoveryPort));
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(multicastIP, IP));
+                _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, ModuledNetSettings.Settings.DiscoveryPort));
 
                 _discoveryThread = new(() => DiscoveryThread()) { IsBackground = true };
                 _discoveryThread.Start();
