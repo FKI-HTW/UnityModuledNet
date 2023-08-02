@@ -12,13 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90dc93faf28b855489153caae4d54fb8, type: 3}
   m_Name: ModuledNetSettings
   m_EditorClassIdentifier: 
-  Username: Username
-  Color:
+  username: Username
+  color:
     serializedVersion: 2
     rgba: 4294967295
-  ServerConnectionTimeout: 5000
-  ServerHeartbeatDelay: 1000
-  ServerDiscoveryTimeout: 4000
-  MaxNumberResendReliablePackets: 5
-  Port: 26822
-  DiscoveryPort: 26823
+  reconnectAfterRecompile: 0
+  _maxNumberClients: 253
+  serverConnectionTimeout: 5000
+  serverHeartbeatDelay: 1000
+  serverDiscoveryTimeout: 3000
+  maxNumberResendReliablePackets: 5
+  debug: 0
+  ipAddressIndex: 0
+  allowVirtualIPs: 0
+  port: 26822
+  discoveryPort: 26823
+  mtu: 1200
+  rtt: 200

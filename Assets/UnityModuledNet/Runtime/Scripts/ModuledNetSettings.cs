@@ -72,7 +72,6 @@ namespace CENTIS.UnityModuledNet
         [SerializeField] private bool debug = false;
         [SerializeField] private int ipAddressIndex = 0;
         [SerializeField] private bool allowVirtualIPs = false;
-        [SerializeField] private int port = 26822;
         [SerializeField] private int discoveryPort = 26823;
         [SerializeField] private int mtu = 1200;
         [SerializeField] private int rtt = 200;
@@ -80,11 +79,6 @@ namespace CENTIS.UnityModuledNet
         public bool Debug { get => debug; set => debug = value; }
         public int IPAddressIndex { get => ipAddressIndex; set => ipAddressIndex = value; }
         public bool AllowVirtualIPs { get => allowVirtualIPs; set => allowVirtualIPs = value; }
-        public int Port
-        {
-            get => port;
-            set => port = value;
-        }
         public int DiscoveryPort { get => discoveryPort; set => discoveryPort = value; }
         public int MTU
         {

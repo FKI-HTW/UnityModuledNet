@@ -87,7 +87,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 ConnectionStatus = ConnectionStatus.IsConnecting;
 
                 _localIP = IPAddress.Parse(ModuledNetManager.LocalIP);
-                _port = ModuledNetSettings.Settings.Port;
+                _port = FindNextAvailablePort();
                 _udpClient = new(_port);
 
                 ServerInformation = new(_localIP, ServerName, ModuledNetSettings.Settings.MaxNumberClients);
@@ -244,7 +244,7 @@ namespace CENTIS.UnityModuledNet.Networking
             {
                 try
                 {   // get packet ip headers
-                    IPEndPoint receiveEndpoint = new(IPAddress.Any, ModuledNetSettings.Settings.Port);
+                    IPEndPoint receiveEndpoint = new(IPAddress.Any, _port);
                     byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
                     IPAddress sender = receiveEndpoint.Address;
                     if (sender.Equals(_localIP))
@@ -559,7 +559,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 heartbeatClient.EnableBroadcast = true;
                 heartbeatClient.ExclusiveAddressUse = false;
                 heartbeatClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                heartbeatClient.Client.Bind(new IPEndPoint(_localIP, discoveryPort));
+                heartbeatClient.Client.Bind(new IPEndPoint(IPAddress.Loopback, discoveryPort));
                 IPEndPoint remoteEndpoint = new(IPAddress.Broadcast, discoveryPort);
 
                 while (_disposeCount == 0)
@@ -568,6 +568,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     ServerInformationPacket heartbeat = new(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, (byte)(_connectedClients.Count + 1));
                     byte[] heartbeatBytes = heartbeat.Serialize();
                     heartbeatClient.Send(heartbeatBytes, heartbeatBytes.Length, remoteEndpoint);
+                    Debug.Log("send");
                     Thread.Sleep(ModuledNetSettings.Settings.ServerHeartbeatDelay);
                 }
             }

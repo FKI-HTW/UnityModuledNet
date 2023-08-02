@@ -54,7 +54,6 @@ namespace CENTIS.UnityModuledNet
                 settings.IPAddressIndex = Mathf.Clamp(settings.IPAddressIndex, 0, cachedIpAddresses.Length - 1);
                 EditorGUILayout.EndHorizontal();
 
-                settings.Port = EditorGUILayout.IntField("Port:", settings.Port);
                 settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", settings.DiscoveryPort);
                 settings.MTU = EditorGUILayout.IntField("MTU:", settings.MTU);
                 settings.RTT = EditorGUILayout.IntField("RTT:", settings.RTT);

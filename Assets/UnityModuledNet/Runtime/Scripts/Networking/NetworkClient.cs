@@ -97,7 +97,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 ConnectionStatus = ConnectionStatus.IsConnecting;
 
                 _localIP = IPAddress.Parse(ModuledNetManager.LocalIP);
-                _port = ModuledNetSettings.Settings.Port;
+                _port = FindNextAvailablePort();
                 _udpClient = new(_port);
 
                 _listenerThread = new(() => ListenerThread(onConnectionEstablished)) { IsBackground = true };
