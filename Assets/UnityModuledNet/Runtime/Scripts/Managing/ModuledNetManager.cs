@@ -11,6 +11,7 @@ using System.Runtime.ExceptionServices;
 using UnityEngine;
 using CENTIS.UnityModuledNet.Networking;
 using CENTIS.UnityModuledNet.Networking.Packets;
+using CENTIS.UnityModuledNet.Networking.ServerDiscovery;
 using CENTIS.UnityModuledNet.Modules;
 using CENTIS.UnityModuledNet.Serialiser;
 
@@ -90,19 +91,14 @@ namespace CENTIS.UnityModuledNet.Managing
         /// <summary>
         /// Action for when a Server was added or removed from the OpenServers.
         /// </summary>
-        public static event Action OnServerListChanged;
+        public static event Action OnOpenServerListChanged;
 
         /// <summary>
-        /// If the Client is connected to the Network and able to discover Servers.
+        /// Current Status of the Connection to the Server.
         /// </summary>
-        public static bool IsServerDiscoveryActive
+        public static EConnectionStatus EConnectionStatus
         {
-            get => _isServerDiscoveryActive; private set => _isServerDiscoveryActive = value;
-        }
-
-        public static ConnectionStatus ConnectionStatus
-        {
-            get => Socket == null ? ConnectionStatus.IsDisconnected : Socket.ConnectionStatus;
+            get => Socket == null ? EConnectionStatus.IsDisconnected : Socket.EConnectionStatus;
         }
 
         /// <summary>
@@ -114,13 +110,19 @@ namespace CENTIS.UnityModuledNet.Managing
         }
 
         /// <summary>
+        /// If the Client is connected to the Network and able to discover Servers.
+        /// </summary>
+        public static bool IsServerDiscoveryActive
+        {
+            get => _serverDiscoveryManager != null && _serverDiscoveryManager.IsServerDiscoveryActive;
+        }
+
+        /// <summary>
         /// A List of all available Servers.
         /// </summary>
-        public static List<OpenServerInformation> OpenServers
+        public static List<OpenServer> OpenServers
         {
-            get => IsServerDiscoveryActive
-                ? _openServers.Values.ToList()
-                : null;
+            get => _serverDiscoveryManager?.OpenServers;
         }
 
         /// <summary>
@@ -173,16 +175,11 @@ namespace CENTIS.UnityModuledNet.Managing
 
         #region private fields
 
-        private readonly static ConcurrentDictionary<IPAddress, OpenServerInformation> _openServers = new();
-
         private readonly static ConcurrentDictionary<byte[], ModuledNetModule> _registeredModules = new(new ByteArrayComparer());
 
-        private readonly static ConcurrentQueue<Action> mainThreadDispatchQueue = new();
+        private readonly static ConcurrentQueue<Action> _mainThreadDispatchQueue = new();
 
-
-        private static UdpClient _udpClient;
-
-        private static Thread _discoveryThread;
+        private static ServerDiscoveryManager _serverDiscoveryManager = new();
 
         private static ANetworkSocket _socket;
         private static ANetworkSocket Socket
@@ -233,8 +230,6 @@ namespace CENTIS.UnityModuledNet.Managing
                 }
             }
         }
-
-        private static bool _isServerDiscoveryActive;
 
         private static ServerInformation ServerInformationBeforeRecompile
         {
@@ -312,22 +307,16 @@ namespace CENTIS.UnityModuledNet.Managing
         {
             OnUpdate?.Invoke();
 
-            lock (mainThreadDispatchQueue)
+            while (_mainThreadDispatchQueue.Count > 0)
             {
-                while (mainThreadDispatchQueue.Count > 0)
-                {
-                    if (mainThreadDispatchQueue.TryDequeue(out Action action))
-                        action?.Invoke();
-                }
+                if (_mainThreadDispatchQueue.TryDequeue(out Action action))
+                    action?.Invoke();
             }
         }
 
         public static void QueueOnUpdate(Action updateAction)
         {
-            lock (mainThreadDispatchQueue)
-            {
-                mainThreadDispatchQueue.Enqueue(updateAction);
-            }
+            _mainThreadDispatchQueue.Enqueue(updateAction);
         }
 
         #endregion
@@ -375,76 +364,6 @@ namespace CENTIS.UnityModuledNet.Managing
                 }
             }
             return ipAddresses;
-        }
-
-        private static void DiscoveryThread()
-        {
-            IPEndPoint receiveEndpoint = new(IPAddress.Any, ModuledNetSettings.Settings.DiscoveryPort);
-
-            while (true)
-            {
-                try
-                {
-                    // get packet ip headers
-                    byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
-                    IPAddress sender = receiveEndpoint.Address;
-                    if (sender.Equals(IP) && !ModuledNetSettings.Settings.AllowLocalConnection)
-                        continue;
-
-                    // get packet type without chunked packet bit
-                    byte typeBytes = receivedBytes[ModuledNetSettings.CRC32_LENGTH];
-                    byte mask = 1 << 7;
-                    typeBytes &= (byte)~mask;
-                    EPacketType packetType = (EPacketType)typeBytes;
-                    if (packetType != EPacketType.ServerInformation)
-                        continue;
-
-                    ServerInformationPacket heartbeat = new(receivedBytes);
-                    if (!heartbeat.TryDeserialize())
-                        continue;
-
-                    OpenServerInformation newServer = new(sender, heartbeat.Servername, heartbeat.MaxNumberOfClients, heartbeat.NumberOfClients);
-                    if (!_openServers.TryGetValue(sender, out OpenServerInformation _))
-                        _ = TimeoutServer(sender);
-
-                    // add new values or update server with new values
-                    _openServers.AddOrUpdate(sender, newServer, (key, value) => value = newServer);
-
-                    QueueOnUpdate(() => OnServerListChanged?.Invoke());
-                }
-                catch (Exception ex)
-                {
-                    switch (ex)
-                    {
-                        case IndexOutOfRangeException:
-                        case ArgumentException:
-                            continue;
-                        case ThreadAbortException:
-                            IsServerDiscoveryActive = false;
-                            return;
-                        default:
-                            Debug.LogError("An Error occurred in the Server Discovery. Reset Server Discovery!");
-                            IsServerDiscoveryActive = false;
-                            return;
-                    }
-                }
-            }
-        }
-
-        private static async Task TimeoutServer(IPAddress serverIP)
-        {
-            await Task.Delay(ModuledNetSettings.Settings.ServerDiscoveryTimeout);
-            if (_openServers.TryGetValue(serverIP, out OpenServerInformation server))
-            {   // timeout and remove servers that haven't been updated for longer than the timeout value
-                if ((DateTime.Now - server.LastHeartbeat).TotalMilliseconds > ModuledNetSettings.Settings.ServerDiscoveryTimeout)
-                {
-                    _openServers.TryRemove(serverIP, out _);
-                    QueueOnUpdate(() => OnServerListChanged?.Invoke());
-                    return;
-                }
-
-                _ = TimeoutServer(serverIP);
-            }
         }
 
         private static void OnDataReceived(byte[] moduleID, byte client, byte[] data)
@@ -523,68 +442,41 @@ namespace CENTIS.UnityModuledNet.Managing
         #region public
 
         /// <summary>
+        /// Starts the Server Discovery.
+        /// </summary>
+        /// <returns><see langword="true"> if the Server Discovery is already active or was successfully started</returns>
+        public static bool StartServerDiscovery()
+		{
+            if (_serverDiscoveryManager == null)
+			{
+                _serverDiscoveryManager = new();
+                _serverDiscoveryManager.OnServerDiscoveryActivated += () => OnServerDiscoveryActivated?.Invoke();
+                _serverDiscoveryManager.OnServerDiscoveryDeactivated += () => OnServerDiscoveryDeactivated?.Invoke();
+                _serverDiscoveryManager.OnOpenServerListChanged += () => OnOpenServerListChanged?.Invoke();
+            }
+            return _serverDiscoveryManager.StartServerDiscovery();
+
+        }
+
+        /// <summary>
+        /// Ends the Server Discovery.
+        /// </summary>
+        public static void EndServerDiscovery()
+		{
+            if (_serverDiscoveryManager != null)
+                _serverDiscoveryManager.EndServerDiscovery();
+        }
+
+        /// <summary>
         /// Resets the Server Discovery. Use this when Exceptions ocurred or the Service Discovery was closed.
         /// </summary>
         /// <returns><see langword="true"/> if the Server Discovery is Active after the Reset</returns>
         public static bool ResetServerDiscovery()
         {
-            try
-            {
-                if (_udpClient != null)
-                {
-                    _udpClient.Close();
-                    _udpClient.Dispose();
-                }
-                if (_discoveryThread != null)
-                {
-                    _discoveryThread.Abort();
-                    _discoveryThread.Join();
-                }
-
-                IPAddress multicastIP = IPAddress.Parse(ModuledNetSettings.Settings.MulticastAddress);
-
-                _udpClient = new();
-                _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
-                _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(multicastIP, IP));
-                _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, ModuledNetSettings.Settings.DiscoveryPort));
-
-                _discoveryThread = new(() => DiscoveryThread()) { IsBackground = true };
-                _discoveryThread.Start();
-
-                return IsServerDiscoveryActive = true;
-            }
-            catch (Exception ex)
-            {
-                switch (ex)
-                {
-                    case FormatException:
-                        Debug.LogError("The Server Discovery Multicast IP is not a valid Address!");
-                        break;
-                    case SocketException:
-                        Debug.LogError("An Error ocurred when accessing the socket. "
-                            + "Make sure the port is not occupied by another process!");
-                        break;
-                    case ArgumentOutOfRangeException:
-                        Debug.LogError("The Given Port is outside the possible Range!");
-                        break;
-                    case ArgumentNullException:
-                        Debug.LogError("The local IP can't be null!");
-                        break;
-                    case ThreadStartException:
-                        Debug.LogError("An Error ocurred when starting the Threads. Please try again later!");
-                        break;
-                    case OutOfMemoryException:
-                        Debug.LogError("Not enough memory available to start the Threads!");
-                        break;
-                    default:
-                        IsServerDiscoveryActive = false;
-                        ExceptionDispatchInfo.Capture(ex).Throw();
-                        throw;
-                }
-                return IsServerDiscoveryActive = false;
-            }
+            if (_serverDiscoveryManager == null)
+                return StartServerDiscovery();
+            else
+                return _serverDiscoveryManager.RestartServerDiscovery();
         }
 
         /// <summary>
@@ -594,7 +486,7 @@ namespace CENTIS.UnityModuledNet.Managing
         /// <param name="onConnectionEstablished">Invoked once the connection was successfully established or failed to.</param>
         public static void ConnectToServer(IPAddress serverIP, Action<bool> onConnectionEstablished = null)
         {
-            if (ConnectionStatus != ConnectionStatus.IsDisconnected)
+            if (EConnectionStatus != EConnectionStatus.IsDisconnected)
             {
                 Debug.LogWarning("The local Client is already connected or connecting to a Server!");
                 onConnectionEstablished?.Invoke(false);

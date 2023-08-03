@@ -43,7 +43,7 @@ namespace CENTIS.UnityModuledNet.Modules
 			ModuledNetManager.OnClientConnected += ClientConnected;
 			ModuledNetManager.OnClientDisconnected += ClientDisconnected;
 			ModuledNetManager.OnConnectedClientListChanged += ConnectedClientListChanged;
-			ModuledNetManager.OnServerListChanged += ServerListChanged;
+			ModuledNetManager.OnOpenServerListChanged += OpenServerListChanged;
 		}
 
 		~ModuledNetModule()
@@ -75,7 +75,7 @@ namespace CENTIS.UnityModuledNet.Modules
 				ModuledNetManager.OnClientConnected -= ClientConnected;
 				ModuledNetManager.OnClientDisconnected -= ClientDisconnected;
 				ModuledNetManager.OnConnectedClientListChanged -= ConnectedClientListChanged;
-				ModuledNetManager.OnServerListChanged -= ServerListChanged;
+				ModuledNetManager.OnOpenServerListChanged -= OpenServerListChanged;
 			}
 
 			UnregisterModule();
@@ -112,7 +112,7 @@ namespace CENTIS.UnityModuledNet.Modules
 		public virtual void ClientConnected(byte clientID) { }
 		public virtual void ClientDisconnected(byte clientID) { }
 		public virtual void ConnectedClientListChanged() { }
-		public virtual void ServerListChanged() { }
+		public virtual void OpenServerListChanged() { }
 
         public abstract void OnReceiveData(byte sender, byte[] data);
         public abstract void SendData(byte[] data, Action<bool> onDataSend, byte? receiver = null);

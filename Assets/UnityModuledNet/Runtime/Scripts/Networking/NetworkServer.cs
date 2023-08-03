@@ -86,7 +86,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     return;
                 }
 
-                ConnectionStatus = ConnectionStatus.IsConnecting;
+                EConnectionStatus = EConnectionStatus.IsConnecting;
 
                 IPAddress localAddress = IPAddress.Parse(ModuledNetManager.LocalIP);
                 int localPort = FindNextAvailablePort();
@@ -106,12 +106,12 @@ namespace CENTIS.UnityModuledNet.Networking
                 ModuledNetManager.OnUpdate += Update;
 
                 ModuledNetManager.AddModuledNetMessage(new("Server has been opened!"));
-                ConnectionStatus = ConnectionStatus.IsConnected;
+                EConnectionStatus = EConnectionStatus.IsConnected;
                 onConnectionEstablished?.Invoke(true);
             }
             catch (Exception ex)
             {
-                ConnectionStatus = ConnectionStatus.IsDisconnected;
+                EConnectionStatus = EConnectionStatus.IsDisconnected;
                 onConnectionEstablished?.Invoke(false);
                 switch (ex)
                 {
@@ -174,7 +174,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     _udpClient.Dispose();
                 }
 
-                ConnectionStatus = ConnectionStatus.IsDisconnected;
+                EConnectionStatus = EConnectionStatus.IsDisconnected;
                 ServerInformation = null;
                 ClientInformation = null;
             }

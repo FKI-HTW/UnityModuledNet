@@ -93,7 +93,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 _tmpUsername = ModuledNetSettings.Settings.Username;
                 _tmpColor = ModuledNetSettings.Settings.Color;
 
-                ConnectionStatus = ConnectionStatus.IsConnecting;
+                EConnectionStatus = EConnectionStatus.IsConnecting;
 
                 _serverEndpoint = new(serverIP, serverPort);
 
@@ -115,7 +115,7 @@ namespace CENTIS.UnityModuledNet.Networking
             }
             catch (Exception ex)
             {
-                ConnectionStatus = ConnectionStatus.IsDisconnected;
+                EConnectionStatus = EConnectionStatus.IsDisconnected;
                 onConnectionEstablished?.Invoke(false);
                 switch (ex)
                 {
@@ -172,7 +172,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     _udpClient.Dispose();
                 }
 
-                ConnectionStatus = ConnectionStatus.IsDisconnected;
+                EConnectionStatus = EConnectionStatus.IsDisconnected;
                 ServerInformation = null;
                 ClientInformation = null;
             }
@@ -371,7 +371,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
         private void HandleConnectionChallengePacket(byte[] packet)
         {
-            if (ConnectionStatus != ConnectionStatus.IsConnecting)
+            if (EConnectionStatus != EConnectionStatus.IsConnecting)
                 return;
 
             ConnectionChallengePacket connectionChallenge = new(packet);
@@ -384,7 +384,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
         private void HandleConnectionAcceptedPacket(byte[] packet, Action<bool> onConnectionEstablished)
         {
-            if (ConnectionStatus != ConnectionStatus.IsConnecting)
+            if (EConnectionStatus != EConnectionStatus.IsConnecting)
                 return;
 
             ConnectionAcceptedPacket connectionAccepted = new(packet);
@@ -395,14 +395,14 @@ namespace CENTIS.UnityModuledNet.Networking
             ServerInformation = new(_serverEndpoint, connectionAccepted.Servername, connectionAccepted.MaxNumberConnectedClients);
 
             _mainThreadActions.Enqueue(() => onConnectionEstablished?.Invoke(true));
-            _mainThreadActions.Enqueue(() => ConnectionStatus = ConnectionStatus.IsConnected);
+            _mainThreadActions.Enqueue(() => EConnectionStatus = EConnectionStatus.IsConnected);
 
             ModuledNetManager.AddModuledNetMessage(new("Connected to Server!"));
         }
 
         private void HandleConnectionDeniedPacket(byte[] packet, Action<bool> onConnectionEstablished)
         {
-            if (ConnectionStatus != ConnectionStatus.IsConnecting)
+            if (EConnectionStatus != EConnectionStatus.IsConnecting)
                 return;
 
             ConnectionDeniedPacket connectionDenied = new(packet);

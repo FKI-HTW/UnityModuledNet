@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace CENTIS.UnityModuledNet.Networking
 {
-    public enum ConnectionStatus
+    public enum EConnectionStatus
     {
         IsDisconnected,
         IsConnecting,

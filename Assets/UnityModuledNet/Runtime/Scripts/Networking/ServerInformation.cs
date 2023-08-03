@@ -83,16 +83,4 @@ namespace CENTIS.UnityModuledNet.Networking
             return new ServerInformation(jsonObject.Endpoint, jsonObject.Servername, jsonObject.MaxNumberConnectedClients);
         }
     }
-
-    public class OpenServerInformation : ServerInformation
-    {
-        public byte NumberConnectedClients { get; private set; }
-        public bool IsServerFull => NumberConnectedClients >= MaxNumberConnectedClients;
-
-        public OpenServerInformation(IPEndPoint endpoint, string servername, byte maxNumberConnectedClients, byte numberConnectedClients)
-            : base(endpoint, servername, maxNumberConnectedClients)
-        {
-            NumberConnectedClients = numberConnectedClients;
-        }
-    }
 }

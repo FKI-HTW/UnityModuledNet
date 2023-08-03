@@ -41,32 +41,32 @@ namespace CENTIS.UnityModuledNet.Networking
         /// </summary>
         public event Action OnDisconnected;
 
-        private ConnectionStatus _connectionStatus = ConnectionStatus.IsDisconnected;
-        public ConnectionStatus ConnectionStatus
+        private EConnectionStatus _EConnectionStatus = EConnectionStatus.IsDisconnected;
+        public EConnectionStatus EConnectionStatus
         {
-            get => _connectionStatus;
+            get => _EConnectionStatus;
             protected set
             {
-                if (value == _connectionStatus)
+                if (value == _EConnectionStatus)
                     return;
 
-                _connectionStatus = value;
+                _EConnectionStatus = value;
                 switch (value)
                 {
-                    case ConnectionStatus.IsConnecting:
+                    case EConnectionStatus.IsConnecting:
                         OnConnecting?.Invoke();
                         break;
-                    case ConnectionStatus.IsConnected:
+                    case EConnectionStatus.IsConnected:
                         OnConnected?.Invoke();
                         break;
-                    case ConnectionStatus.IsDisconnected:
+                    case EConnectionStatus.IsDisconnected:
                         OnDisconnected?.Invoke();
                         break;
                 }
             }
         }
 
-        public bool IsConnected => ConnectionStatus == ConnectionStatus.IsConnected;
+        public bool IsConnected => EConnectionStatus == EConnectionStatus.IsConnected;
 
         /// <summary>
         /// Information about the Local Server/the Server that you are connected to.
