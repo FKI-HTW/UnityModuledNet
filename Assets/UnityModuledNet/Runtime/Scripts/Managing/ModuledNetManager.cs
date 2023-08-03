@@ -308,10 +308,8 @@ namespace CENTIS.UnityModuledNet.Managing
             OnUpdate?.Invoke();
 
             while (_mainThreadDispatchQueue.Count > 0)
-            {
                 if (_mainThreadDispatchQueue.TryDequeue(out Action action))
                     action?.Invoke();
-            }
         }
 
         public static void QueueOnUpdate(Action updateAction)

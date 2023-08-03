@@ -34,8 +34,6 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
         private UdpClient _udpClient;
         private Thread _discoveryThread;
 
-        private readonly ConcurrentQueue<Action> _mainThreadDispatchQueue = new();
-
         private readonly ConcurrentDictionary<IPEndPoint, OpenServer> _openServers = new();
 
 		#endregion
@@ -161,7 +159,7 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
                     // add new values or update server with new values
                     _openServers.AddOrUpdate(receiveEndpoint, newServer, (key, value) => value = newServer);
 
-                    _mainThreadDispatchQueue.Enqueue(() => OnOpenServerListChanged?.Invoke());
+                    ModuledNetManager.QueueOnUpdate(() => OnOpenServerListChanged?.Invoke());
                 }
                 catch (Exception ex)
                 {
@@ -190,7 +188,7 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
                 if ((DateTime.Now - server.LastHeartbeat).TotalMilliseconds > ModuledNetSettings.Settings.ServerDiscoveryTimeout)
                 {
                     _openServers.TryRemove(serverEndpoint, out _);
-                    _mainThreadDispatchQueue.Enqueue(() => OnOpenServerListChanged?.Invoke());
+                    ModuledNetManager.QueueOnUpdate(() => OnOpenServerListChanged?.Invoke());
                     return;
                 }
 
