@@ -46,7 +46,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
 	internal class ClientInformationSocket : ClientInformation
 	{
-		public IPAddress IP { get; private set; }
+		public IPEndPoint Endpoint { get; private set; }
 		public DateTime LastHeartbeat { get; set; }
 
 		internal readonly ConcurrentDictionary<ushort, ASequencedNetworkPacket> ReceivedPacketsBuffer = new();
@@ -60,9 +60,9 @@ namespace CENTIS.UnityModuledNet.Networking
 		internal ushort ReliableLocalSequence { get; set; }
 		internal ushort ReliableRemoteSequence { get; set; }
 		
-		public ClientInformationSocket(byte id, IPAddress ip, string username, Color32 color) : base(id, username, color)
+		public ClientInformationSocket(byte id, IPEndPoint endpoint, string username, Color32 color) : base(id, username, color)
 		{
-			IP = ip;
+			Endpoint = endpoint;
 			LastHeartbeat = DateTime.Now;
 
 			UnreliableLocalSequence = 0;

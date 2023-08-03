@@ -18,14 +18,16 @@ namespace CENTIS.UnityModuledNet.Networking
     {
         #region private fields
 
+        private IPEndPoint _localEndpoint;
+
         private Thread _heartbeatThread;
 
-        private readonly ConcurrentDictionary<IPAddress, byte[]> _pendingConnections = new();
+        private readonly ConcurrentDictionary<IPEndPoint, byte[]> _pendingConnections = new();
 
-        private readonly ConcurrentDictionary<byte, IPAddress> _idIpTable = new();
-        private readonly ConcurrentDictionary<IPAddress, ClientInformationSocket> _connectedClients = new();
+        private readonly ConcurrentDictionary<byte, IPEndPoint> _idIpTable = new();
+        private readonly ConcurrentDictionary<IPEndPoint, ClientInformationSocket> _connectedClients = new();
 
-        private readonly ConcurrentQueue<(IPAddress, ANetworkPacket)> _packetsToSend = new();
+        private readonly ConcurrentQueue<(IPEndPoint, ANetworkPacket)> _packetsToSend = new();
 
         #endregion
 
@@ -86,11 +88,12 @@ namespace CENTIS.UnityModuledNet.Networking
 
                 ConnectionStatus = ConnectionStatus.IsConnecting;
 
-                _localIP = IPAddress.Parse(ModuledNetManager.LocalIP);
-                _port = FindNextAvailablePort();
-                _udpClient = new(_port);
+                IPAddress localAddress = IPAddress.Parse(ModuledNetManager.LocalIP);
+                int localPort = FindNextAvailablePort();
+                _localEndpoint = new(localAddress, localPort);
+                _udpClient = new(_localEndpoint);
 
-                ServerInformation = new(_localIP, ServerName, ModuledNetSettings.Settings.MaxNumberClients);
+                ServerInformation = new(_localEndpoint, ServerName, ModuledNetSettings.Settings.MaxNumberClients);
                 ClientInformation = new(1, ModuledNetSettings.Settings.Username, ModuledNetSettings.Settings.Color);
 
                 _listenerThread = new(() => ListenerThread()) { IsBackground = true };
@@ -196,7 +199,7 @@ namespace CENTIS.UnityModuledNet.Networking
             ConnectionClosedPacket connectionClosed = new();
             byte[] data = connectionClosed.Serialize();
             foreach (ClientInformationSocket client in _connectedClients.Values)
-                _udpClient.Send(data, data.Length, new(client.IP, _port));
+                _udpClient.Send(data, data.Length, client.Endpoint);
 
             ModuledNetManager.AddModuledNetMessage(new("Closed Server!"));
             Dispose();
@@ -244,10 +247,9 @@ namespace CENTIS.UnityModuledNet.Networking
             {
                 try
                 {   // get packet ip headers
-                    IPEndPoint receiveEndpoint = new(IPAddress.Any, _port);
+                    IPEndPoint receiveEndpoint = new(1, 1);
                     byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
-                    IPAddress sender = receiveEndpoint.Address;
-                    if (sender.Equals(_localIP))
+                    if (receiveEndpoint.Equals(_localEndpoint))
                         continue;
 
                     // get packet type without chunked packet bit
@@ -263,17 +265,17 @@ namespace CENTIS.UnityModuledNet.Networking
                     switch (packetType)
                     {
                         case EPacketType.ConnectionRequest:
-                            HandleConnectionRequestPacket(sender, receivedBytes);
+                            HandleConnectionRequestPacket(receiveEndpoint, receivedBytes);
                             break;
                         case EPacketType.ChallengeAnswer:
-                            HandleChallengeAnswerPacket(sender, receivedBytes);
+                            HandleChallengeAnswerPacket(receiveEndpoint, receivedBytes);
                             break;
                         case EPacketType.ConnectionClosed:
-                            HandleConnectionClosedPacket(sender, receivedBytes);
+                            HandleConnectionClosedPacket(receiveEndpoint, receivedBytes);
                             break;
                         case EPacketType.ACK:
                             {
-                                if (!_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
+                                if (!_connectedClients.TryGetValue(receiveEndpoint, out ClientInformationSocket client))
                                     break;
                                 client.LastHeartbeat = DateTime.Now;
 
@@ -285,7 +287,7 @@ namespace CENTIS.UnityModuledNet.Networking
                         case EPacketType.UnreliableData:
                         case EPacketType.UnreliableUnorderedData:
                             {
-                                if (!_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
+                                if (!_connectedClients.TryGetValue(receiveEndpoint, out ClientInformationSocket client))
                                     break;
                                 client.LastHeartbeat = DateTime.Now;
 
@@ -304,7 +306,7 @@ namespace CENTIS.UnityModuledNet.Networking
                             }
                         case EPacketType.ClientInfo:
                             {
-                                if (!_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
+                                if (!_connectedClients.TryGetValue(receiveEndpoint, out ClientInformationSocket client))
                                     break;
                                 client.LastHeartbeat = DateTime.Now;
 
@@ -341,7 +343,7 @@ namespace CENTIS.UnityModuledNet.Networking
             }
         }
 
-        private void HandleConnectionRequestPacket(IPAddress sender, byte[] packet)
+        private void HandleConnectionRequestPacket(IPEndPoint sender, byte[] packet)
         {
             ConnectionRequestPacket connectionRequest = new(packet);
             if (!connectionRequest.TryDeserialize())
@@ -349,7 +351,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
             if (_connectedClients.TryGetValue(sender, out ClientInformationSocket client))
             {   // resend client id in case of client not receiving theirs
-                _packetsToSend.Enqueue((client.IP, new ConnectionAcceptedPacket(client.ID, ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients)));
+                _packetsToSend.Enqueue((client.Endpoint, new ConnectionAcceptedPacket(client.ID, ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients)));
                 return;
             }
 
@@ -369,7 +371,7 @@ namespace CENTIS.UnityModuledNet.Networking
             _packetsToSend.Enqueue((sender, connectionChallenge));
         }
 
-        private void HandleChallengeAnswerPacket(IPAddress sender, byte[] packet)
+        private void HandleChallengeAnswerPacket(IPEndPoint sender, byte[] packet)
         {
             ChallengeAnswerPacket challengeAnswer = new(packet);
             if (!challengeAnswer.TryDeserialize())
@@ -387,7 +389,7 @@ namespace CENTIS.UnityModuledNet.Networking
             AddClient(sender, challengeAnswer.Username, challengeAnswer.Color);
         }
 
-        private void HandleConnectionClosedPacket(IPAddress sender, byte[] packet)
+        private void HandleConnectionClosedPacket(IPEndPoint sender, byte[] packet)
         {
             ConnectionClosedPacket connectionClosed = new(packet);
             if (!connectionClosed.TryDeserialize())
@@ -399,7 +401,7 @@ namespace CENTIS.UnityModuledNet.Networking
             _connectedClients.TryRemove(sender, out _);
 
             foreach (ClientInformationSocket remainingClient in _connectedClients.Values)
-                _packetsToSend.Enqueue((remainingClient.IP, new ClientDisconnectedPacket(client.ID)));
+                _packetsToSend.Enqueue((remainingClient.Endpoint, new ClientDisconnectedPacket(client.ID)));
 
             _mainThreadActions.Enqueue(() => OnClientDisconnected?.Invoke(client.ID));
             _mainThreadActions.Enqueue(() => OnConnectedClientListChanged?.Invoke());
@@ -433,7 +435,7 @@ namespace CENTIS.UnityModuledNet.Networking
             // reliable packet sequence
             {
                 // send ACK for reliable sequence
-                _packetsToSend.Enqueue((sender.IP, new ACKPacket(packet.Sequence)));
+                _packetsToSend.Enqueue((sender.Endpoint, new ACKPacket(packet.Sequence)));
 
                 // ignore old packets unless they are unordered
                 if (!IsNewPacket(packet.Sequence, sender.ReliableRemoteSequence) && !IsUnorderedSequence(packet.Type))
@@ -466,7 +468,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
         private void HandleChunkedDataPacket(ClientInformationSocket sender, DataPacket packet)
         {   // send ACK
-            _packetsToSend.Enqueue((sender.IP, new ACKPacket(packet.Sequence, packet.SliceNumber)));
+            _packetsToSend.Enqueue((sender.Endpoint, new ACKPacket(packet.Sequence, packet.SliceNumber)));
 
             // ignore old packets unless they are unordered
             if (!IsNewPacket(packet.Sequence, sender.ReliableRemoteSequence) && !IsUnorderedSequence(packet.Type))
@@ -514,9 +516,9 @@ namespace CENTIS.UnityModuledNet.Networking
                     if (dataPacket.ClientID > 1)
                     {   // forward packet to specified client
                         if (GetClientById(dataPacket.ClientID, out ClientInformationSocket targetClient))
-                            CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.IP, sender.ID);
+                            CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.Endpoint, sender.ID);
                         else
-                            _packetsToSend.Enqueue((sender.IP, new ClientDisconnectedPacket(dataPacket.ClientID)));
+                            _packetsToSend.Enqueue((sender.Endpoint, new ClientDisconnectedPacket(dataPacket.ClientID)));
                         return;
                     }
 
@@ -525,7 +527,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     {
                         foreach (ClientInformationSocket targetClient in _connectedClients.Values)
                             if (targetClient.ID != sender.ID)
-                                CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.IP, sender.ID);
+                                CreateDataSenderPackets(dataPacket.Type, dataPacket.ModuleID, dataPacket.Data, null, targetClient.Endpoint, sender.ID);
                     }
 
                     // notify manager of received data, consuming the packet
@@ -538,7 +540,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     ClientInfoPacket info = new(sender.ID, sender.Username, sender.Color);
                     foreach (ClientInformationSocket client in _connectedClients.Values)
                         if (sender.ID != client.ID)
-                            _packetsToSend.Enqueue((client.IP, info));
+                            _packetsToSend.Enqueue((client.Endpoint, info));
 
                     _mainThreadActions.Enqueue(() => OnConnectedClientListChanged?.Invoke());
                     break;
@@ -561,8 +563,8 @@ namespace CENTIS.UnityModuledNet.Networking
                 heartbeatClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
                 heartbeatClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 heartbeatClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
-                heartbeatClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(multicastIP, _localIP));
-                heartbeatClient.Client.Bind(new IPEndPoint(_localIP, _port));
+                heartbeatClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(multicastIP, _localEndpoint.Address));
+                heartbeatClient.Client.Bind(_localEndpoint);
 
                 while (_disposeCount == 0)
                 {   // send heartbeat used for discovery until server is closed
@@ -597,7 +599,7 @@ namespace CENTIS.UnityModuledNet.Networking
             {
                 try
                 {
-                    if (_packetsToSend.Count == 0 || !_packetsToSend.TryDequeue(out (IPAddress, ANetworkPacket) packet))
+                    if (_packetsToSend.Count == 0 || !_packetsToSend.TryDequeue(out (IPEndPoint, ANetworkPacket) packet))
                         continue;
 
                     byte[] data;
@@ -605,7 +607,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     {
                         case AConnectionNetworkPacket c:
                             data = c.Serialize();
-                            _udpClient.Send(data, data.Length, new(packet.Item1, _port));
+                            _udpClient.Send(data, data.Length, packet.Item1);
                             continue;
                         case ASequencedNetworkPacket s:
                             if (!_connectedClients.TryGetValue(packet.Item1, out ClientInformationSocket client))
@@ -616,7 +618,7 @@ namespace CENTIS.UnityModuledNet.Networking
                             {
                                 client.UnreliableLocalSequence++;
                                 data = s.Serialize(client.UnreliableLocalSequence);
-                                _udpClient.Send(data, data.Length, new(packet.Item1, _port));
+                                _udpClient.Send(data, data.Length, packet.Item1);
 
                                 if (s is DataPacket ud)
                                 {   // invoke callback once it was send
@@ -637,7 +639,7 @@ namespace CENTIS.UnityModuledNet.Networking
                                         {
                                             rd.SliceNumber = i;
                                             data = s.Serialize(client.ReliableLocalSequence);
-                                            _udpClient.Send(data, data.Length, new(packet.Item1, _port));
+                                            _udpClient.Send(data, data.Length, packet.Item1);
                                             client.SendChunksBuffer.TryAdd((client.ReliableLocalSequence, rd.SliceNumber), data);
                                             _ = ResendSliceData(packet.Item1, (client.ReliableLocalSequence, rd.SliceNumber));
                                         }
@@ -647,7 +649,7 @@ namespace CENTIS.UnityModuledNet.Networking
                                     else
                                     {   // send data packet as one
                                         data = s.Serialize(client.ReliableLocalSequence);
-                                        _udpClient.Send(data, data.Length, new(packet.Item1, _port));
+                                        _udpClient.Send(data, data.Length, packet.Item1);
                                         client.SendPacketsBuffer.TryAdd(client.ReliableLocalSequence, data);
                                         _ = ResendPacketData(packet.Item1, client.ReliableLocalSequence);
                                         rd.Callback?.Invoke(true);
@@ -657,7 +659,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
                                 // send sequenced packet
                                 data = s.Serialize(client.ReliableLocalSequence);
-                                _udpClient.Send(data, data.Length, new(packet.Item1, _port));
+                                _udpClient.Send(data, data.Length, packet.Item1);
                                 client.SendPacketsBuffer.TryAdd(client.ReliableLocalSequence, data);
                                 _ = ResendPacketData(packet.Item1, client.ReliableLocalSequence);
                                 continue;
@@ -694,15 +696,15 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <param name="sequence"></param>
         /// <param name="retries"></param>
         /// <returns></returns>
-        private async Task ResendSliceData(IPAddress clientIP, (ushort, ushort) sequence, int retries = 0)
+        private async Task ResendSliceData(IPEndPoint clientEndpoint, (ushort, ushort) sequence, int retries = 0)
         {
             await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
-            if (_connectedClients.TryGetValue(clientIP, out ClientInformationSocket client)
+            if (_connectedClients.TryGetValue(clientEndpoint, out ClientInformationSocket client)
                 && client.SendChunksBuffer.TryGetValue(sequence, out byte[] data))
             {
-                _udpClient.Send(data, data.Length, new(client.IP, _port));
+                _udpClient.Send(data, data.Length, clientEndpoint);
                 if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
-                    _ = ResendSliceData(clientIP, sequence, retries + 1);
+                    _ = ResendSliceData(clientEndpoint, sequence, retries + 1);
                 else
                     RemoveClient(client.ID, true);
             }
@@ -716,15 +718,15 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <param name="sequence"></param>
         /// <param name="retries"></param>
         /// <returns></returns>
-        private async Task ResendPacketData(IPAddress clientIP, ushort sequence, int retries = 0)
+        private async Task ResendPacketData(IPEndPoint clientEndpoint, ushort sequence, int retries = 0)
         {
             await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
-            if (_connectedClients.TryGetValue(clientIP, out ClientInformationSocket client)
+            if (_connectedClients.TryGetValue(clientEndpoint, out ClientInformationSocket client)
                 && client.SendPacketsBuffer.TryGetValue(sequence, out byte[] data))
             {
-                _udpClient.Send(data, data.Length, new(client.IP, _port));
+                _udpClient.Send(data, data.Length, clientEndpoint);
                 if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
-                    _ = ResendPacketData(clientIP, sequence, retries + 1);
+                    _ = ResendPacketData(clientEndpoint, sequence, retries + 1);
                 else
                     RemoveClient(client.ID, true);
             }
@@ -742,8 +744,8 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <returns></returns>
         private bool GetClientById(byte clientID, out ClientInformationSocket client)
         {
-            if (!_idIpTable.TryGetValue(clientID, out IPAddress clientIP)
-                || !_connectedClients.TryGetValue(clientIP, out ClientInformationSocket foundClient))
+            if (!_idIpTable.TryGetValue(clientID, out IPEndPoint clientEndpoint)
+                || !_connectedClients.TryGetValue(clientEndpoint, out ClientInformationSocket foundClient))
             {
                 client = null;
                 return false;
@@ -760,7 +762,7 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <param name="username"></param>
         /// <param name="color"></param>
         /// <returns></returns>
-        private ClientInformationSocket AddClient(IPAddress ip, string username, Color32 color)
+        private ClientInformationSocket AddClient(IPEndPoint endpoint, string username, Color32 color)
         {
             // find next available client id
             byte newID = 0;
@@ -777,23 +779,23 @@ namespace CENTIS.UnityModuledNet.Networking
                 throw new Exception("Something went wrong assigning the Client ID!");
 
             // create client
-            ClientInformationSocket newClient = new(newID, ip, username, color);
-            if (!_connectedClients.TryAdd(ip, newClient) || !_idIpTable.TryAdd(newID, ip) || !_pendingConnections.TryRemove(ip, out _))
+            ClientInformationSocket newClient = new(newID, endpoint, username, color);
+            if (!_connectedClients.TryAdd(endpoint, newClient) || !_idIpTable.TryAdd(newID, endpoint) || !_pendingConnections.TryRemove(endpoint, out _))
                 throw new Exception("Something went wrong creating the Client!");
 
             // send server info to client
-            _packetsToSend.Enqueue((ip, new ConnectionAcceptedPacket(newID, ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients)));
-            _packetsToSend.Enqueue((ip, new ClientInfoPacket(ClientInformation.ID, ClientInformation.Username, ClientInformation.Color)));
+            _packetsToSend.Enqueue((endpoint, new ConnectionAcceptedPacket(newID, ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients)));
+            _packetsToSend.Enqueue((endpoint, new ClientInfoPacket(ClientInformation.ID, ClientInformation.Username, ClientInformation.Color)));
 
             ClientInfoPacket info = new(newID, newClient.Username, newClient.Color);
             foreach (ClientInformationSocket client in _connectedClients.Values)
             {
                 if (client.ID != newID)
                 {   // notify all other clients of new client
-                    _packetsToSend.Enqueue((client.IP, info));
+                    _packetsToSend.Enqueue((client.Endpoint, info));
 
                     // send data of all other clients to new client
-                    _packetsToSend.Enqueue((ip, new ClientInfoPacket(client.ID, client.Username, client.Color)));
+                    _packetsToSend.Enqueue((endpoint, new ClientInfoPacket(client.ID, client.Username, client.Color)));
                 }
             }
 
@@ -816,11 +818,11 @@ namespace CENTIS.UnityModuledNet.Networking
             if (!GetClientById(clientID, out ClientInformationSocket client))
                 return false;
 
-            _packetsToSend.Enqueue((client.IP, new ConnectionClosedPacket()));
-            _connectedClients.TryRemove(client.IP, out _);
+            _packetsToSend.Enqueue((client.Endpoint, new ConnectionClosedPacket()));
+            _connectedClients.TryRemove(client.Endpoint, out _);
 
             foreach (ClientInformationSocket remainingClient in _connectedClients.Values)
-                _packetsToSend.Enqueue((remainingClient.IP, new ClientDisconnectedPacket(clientID)));
+                _packetsToSend.Enqueue((remainingClient.Endpoint, new ClientDisconnectedPacket(clientID)));
 
             _mainThreadActions.Enqueue(() => OnClientDisconnected?.Invoke(clientID));
             _mainThreadActions.Enqueue(() => OnConnectedClientListChanged?.Invoke());
@@ -872,14 +874,14 @@ namespace CENTIS.UnityModuledNet.Networking
             if (receiver != null)
             {
                 if (GetClientById((byte)receiver, out ClientInformationSocket client))
-                    CreateDataSenderPackets(type, moduleID, data, dataCallback, client.IP, 1);
+                    CreateDataSenderPackets(type, moduleID, data, dataCallback, client.Endpoint, 1);
                 else
                     dataCallback?.Invoke(false);
                 return;
             }
 
             foreach (ClientInformationSocket client in _connectedClients.Values)
-                CreateDataSenderPackets(type, moduleID, data, dataCallback, client.IP, 1);
+                CreateDataSenderPackets(type, moduleID, data, dataCallback, client.Endpoint, 1);
         }
 
         /// <summary>
@@ -891,7 +893,7 @@ namespace CENTIS.UnityModuledNet.Networking
         /// <param name="dataCallback"></param>
         /// <param name="receiver"></param>
         /// <param name="sender"></param>
-        private void CreateDataSenderPackets(EPacketType type, byte[] moduleID, byte[] data, Action<bool> dataCallback, IPAddress receiver, byte sender)
+        private void CreateDataSenderPackets(EPacketType type, byte[] moduleID, byte[] data, Action<bool> dataCallback, IPEndPoint receiver, byte sender)
         {
             if (!IsDataPacket(type))
                 throw new Exception("This function only supports Data Packets!");

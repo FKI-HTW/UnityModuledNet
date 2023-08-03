@@ -22,9 +22,11 @@ MonoBehaviour:
   serverHeartbeatDelay: 1000
   serverDiscoveryTimeout: 3000
   maxNumberResendReliablePackets: 5
+  discoveryPort: 26823
+  multicastAddress: 239.255.255.150
   debug: 0
+  allowLocalConnection: 0
   ipAddressIndex: 0
   allowVirtualIPs: 0
-  discoveryPort: 26823
   mtu: 1200
   rtt: 200

@@ -1,15 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using UnityEngine;
 using CENTIS.UnityModuledNet.Networking.Packets;
-using CENTIS.UnityModuledNet.Managing;
 
 namespace CENTIS.UnityModuledNet.Networking
 {
@@ -17,8 +13,6 @@ namespace CENTIS.UnityModuledNet.Networking
     {
         #region protected fields
 
-        protected IPAddress _localIP;
-        protected int _port;
         protected UdpClient _udpClient;
 
         protected Thread _listenerThread;

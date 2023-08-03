@@ -7,14 +7,14 @@ namespace CENTIS.UnityModuledNet.Networking
 {
     public class ServerInformation
     {
-        public IPAddress IP { get; private set; }
+        public IPEndPoint Endpoint { get; private set; }
         public string Servername { get; private set; }
         public byte MaxNumberConnectedClients { get; private set; }
         public DateTime LastHeartbeat { get; set; }
 
-        public ServerInformation(IPAddress ip, string servername, byte maxNumberConnectedClients)
+        public ServerInformation(IPEndPoint endpoint, string servername, byte maxNumberConnectedClients)
         {
-            IP = ip;
+            Endpoint = endpoint;
             Servername = servername;
             MaxNumberConnectedClients = maxNumberConnectedClients;
             LastHeartbeat = DateTime.Now;
@@ -29,39 +29,42 @@ namespace CENTIS.UnityModuledNet.Networking
             else
             {
                 ServerInformation server = (ServerInformation)obj;
-                return server.IP.Equals(IP);
+                return server.Endpoint.Equals(Endpoint);
             }
         }
 
         public override int GetHashCode()
         {
-            return IP.GetHashCode();
+            return Endpoint.GetHashCode();
         }
 
         [Serializable]
         private class StringRepresentation
         {
             [SerializeField] private string ip;
+            [SerializeField] private int port;
             [SerializeField] private string servername;
             [SerializeField] private byte maxNumberConnectedClients;
             [SerializeField] private string lastHeartbeat;
 
-            public IPAddress IP => IPAddress.Parse(ip);
+            public IPEndPoint Endpoint => new(IPAddress.Parse(ip), port);
             public string Servername => servername;
             public byte MaxNumberConnectedClients => maxNumberConnectedClients;
             public DateTime LastHeartbeat => DateTime.Parse(lastHeartbeat);
 
-            public StringRepresentation(IPAddress ip, string servername, byte maxNumberConnectedClients, DateTime lastHeartbeat)
+            public StringRepresentation(IPEndPoint endpoint, string servername, byte maxNumberConnectedClients, DateTime lastHeartbeat)
             {
-                this.ip = ip.ToString();
+                this.ip = endpoint.Address.ToString();
+                this.port = endpoint.Port;
                 this.servername = servername;
                 this.maxNumberConnectedClients = maxNumberConnectedClients;
                 this.lastHeartbeat = lastHeartbeat.ToString();
             }
 
-            public StringRepresentation(string ip, string servername, byte maxNumberConnectedClients, string lastHeartbeat)
+            public StringRepresentation(string ip, int port, string servername, byte maxNumberConnectedClients, string lastHeartbeat)
             {
                 this.ip = ip;
+                this.port = port;
                 this.servername = servername;
                 this.maxNumberConnectedClients = maxNumberConnectedClients;
                 this.lastHeartbeat = lastHeartbeat;
@@ -70,14 +73,14 @@ namespace CENTIS.UnityModuledNet.Networking
 
         public string ToJson()
         {
-            var jsonObject = new StringRepresentation(IP, Servername, MaxNumberConnectedClients, LastHeartbeat);
+            var jsonObject = new StringRepresentation(Endpoint, Servername, MaxNumberConnectedClients, LastHeartbeat);
             return JsonUtility.ToJson(jsonObject);
         }
 
         public static ServerInformation FromJson(string json)
         {
             var jsonObject = JsonUtility.FromJson<StringRepresentation>(json);
-            return new ServerInformation(jsonObject.IP, jsonObject.Servername, jsonObject.MaxNumberConnectedClients);
+            return new ServerInformation(jsonObject.Endpoint, jsonObject.Servername, jsonObject.MaxNumberConnectedClients);
         }
     }
 
@@ -86,8 +89,8 @@ namespace CENTIS.UnityModuledNet.Networking
         public byte NumberConnectedClients { get; private set; }
         public bool IsServerFull => NumberConnectedClients >= MaxNumberConnectedClients;
 
-        public OpenServerInformation(IPAddress ip, string servername, byte maxNumberConnectedClients, byte numberConnectedClients)
-            : base(ip, servername, maxNumberConnectedClients)
+        public OpenServerInformation(IPEndPoint endpoint, string servername, byte maxNumberConnectedClients, byte numberConnectedClients)
+            : base(endpoint, servername, maxNumberConnectedClients)
         {
             NumberConnectedClients = numberConnectedClients;
         }
