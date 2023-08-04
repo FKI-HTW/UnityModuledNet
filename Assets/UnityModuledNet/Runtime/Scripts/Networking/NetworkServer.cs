@@ -91,7 +91,10 @@ namespace CENTIS.UnityModuledNet.Networking
                 IPAddress localAddress = IPAddress.Parse(ModuledNetManager.LocalIP);
                 int localPort = FindNextAvailablePort();
                 _localEndpoint = new(localAddress, localPort);
-                _udpClient = new(_localEndpoint);
+                _udpClient = new();
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                _udpClient.Client.Bind(_localEndpoint);
 
                 ServerInformation = new(_localEndpoint, ServerName, ModuledNetSettings.Settings.MaxNumberClients);
                 ClientInformation = new(1, ModuledNetSettings.Settings.Username, ModuledNetSettings.Settings.Color);
@@ -565,13 +568,14 @@ namespace CENTIS.UnityModuledNet.Networking
                 heartbeatClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
                 heartbeatClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(multicastIP, _localEndpoint.Address));
                 heartbeatClient.Client.Bind(_localEndpoint);
+                heartbeatClient.Connect(remoteEP);
 
                 while (_disposeCount == 0)
                 {   // send heartbeat used for discovery until server is closed
                     // TODO : only recalculate if connected clients changed
                     ServerInformationPacket heartbeat = new(ServerInformation.Servername, ServerInformation.MaxNumberConnectedClients, (byte)(_connectedClients.Count + 1));
                     byte[] heartbeatBytes = heartbeat.Serialize();
-                    heartbeatClient.Send(heartbeatBytes, heartbeatBytes.Length, remoteEP);
+                    heartbeatClient.Send(heartbeatBytes, heartbeatBytes.Length);
                     Thread.Sleep(ModuledNetSettings.Settings.ServerHeartbeatDelay);
                 }
             }

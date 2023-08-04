@@ -101,6 +101,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 int localPort = FindNextAvailablePort();
                 _localEndpoint = new(localAddress, localPort);
                 _udpClient = new(_localEndpoint);
+                _udpClient.Connect(_serverEndpoint);
 
                 _listenerThread = new(() => ListenerThread(onConnectionEstablished)) { IsBackground = true };
                 _listenerThread.Start();
@@ -200,7 +201,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
             ConnectionClosedPacket connectionClosed = new();
             byte[] data = connectionClosed.Serialize();
-            _udpClient.Send(data, data.Length, _serverEndpoint);
+            _udpClient.Send(data, data.Length);
 
             ModuledNetManager.AddModuledNetMessage(new("Disconnected from Server!"));
             _mainThreadActions.Enqueue(() => Dispose());
@@ -583,7 +584,7 @@ namespace CENTIS.UnityModuledNet.Networking
                     {
                         case AConnectionNetworkPacket c:
                             data = c.Serialize();
-                            _udpClient.Send(data, data.Length, _serverEndpoint);
+                            _udpClient.Send(data, data.Length);
                             continue;
                         case ASequencedNetworkPacket s:
                             // serialize with unreliable sequence
@@ -591,7 +592,7 @@ namespace CENTIS.UnityModuledNet.Networking
                             {
                                 _unreliableLocalSequence++;
                                 data = s.Serialize(_unreliableLocalSequence);
-                                _udpClient.Send(data, data.Length, _serverEndpoint);
+                                _udpClient.Send(data, data.Length);
 
                                 if (s is DataPacket ud)
                                 {   // invoke callback once it was send
@@ -612,7 +613,7 @@ namespace CENTIS.UnityModuledNet.Networking
                                         {
                                             rd.SliceNumber = i;
                                             data = s.Serialize(_reliableLocalSequence);
-                                            _udpClient.Send(data, data.Length, _serverEndpoint);
+                                            _udpClient.Send(data, data.Length);
                                             _sendChunksBuffer.TryAdd((_reliableLocalSequence, rd.SliceNumber), data);
                                             _ = ResendSliceData((_reliableLocalSequence, rd.SliceNumber));
                                         }
@@ -622,7 +623,7 @@ namespace CENTIS.UnityModuledNet.Networking
                                     else
                                     {   // send data packet as one
                                         data = s.Serialize(_reliableLocalSequence);
-                                        _udpClient.Send(data, data.Length, _serverEndpoint);
+                                        _udpClient.Send(data, data.Length);
                                         _sendPacketsBuffer.TryAdd(_reliableLocalSequence, data);
                                         _ = ResendPacketData(_reliableLocalSequence);
                                         rd.Callback?.Invoke(true);
@@ -632,7 +633,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
                                 // send sequenced packet
                                 data = s.Serialize(_reliableLocalSequence);
-                                _udpClient.Send(data, data.Length, _serverEndpoint);
+                                _udpClient.Send(data, data.Length);
                                 _sendPacketsBuffer.TryAdd(_reliableLocalSequence, data);
                                 _ = ResendPacketData(_reliableLocalSequence);
                                 continue;
@@ -674,7 +675,7 @@ namespace CENTIS.UnityModuledNet.Networking
             await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
             if (_sendChunksBuffer.TryGetValue(sequence, out byte[] data))
             {
-                _udpClient.Send(data, data.Length, _serverEndpoint);
+                _udpClient.Send(data, data.Length);
                 if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
                     _ = ResendSliceData(sequence, retries + 1);
                 else
@@ -695,7 +696,7 @@ namespace CENTIS.UnityModuledNet.Networking
             await Task.Delay((int)(ModuledNetSettings.Settings.RTT * 1.25f));
             if (_sendPacketsBuffer.TryGetValue(sequence, out byte[] data))
             {
-                _udpClient.Send(data, data.Length, _serverEndpoint);
+                _udpClient.Send(data, data.Length);
                 if (retries < ModuledNetSettings.Settings.MaxNumberResendReliablePackets)
                     _ = ResendPacketData(sequence, retries + 1);
                 else
