@@ -111,15 +111,6 @@ namespace CENTIS.UnityModuledNet.Networking
 
         #region helper methods
 
-        protected static int FindNextAvailablePort()
-		{
-            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
-            {
-                socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
-                return ((IPEndPoint)socket.LocalEndPoint).Port;
-            }
-        }
-
         private const ushort HALF_USHORT = ushort.MaxValue / 2;
 
         /// <summary>

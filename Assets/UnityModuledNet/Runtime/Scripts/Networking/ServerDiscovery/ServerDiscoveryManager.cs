@@ -56,7 +56,7 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, true);
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(_multicastIP, _localIP));
-                _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, _discoveryPort));
+                _udpClient.Client.Bind(new IPEndPoint(_localIP, _discoveryPort));
 
                 _discoveryThread = new(() => DiscoveryThread()) { IsBackground = true };
                 _discoveryThread.Start();
@@ -138,7 +138,8 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
                     IPEndPoint receiveEndpoint = new(1, 1);
                     byte[] receivedBytes = _udpClient.Receive(ref receiveEndpoint);
                     // TODO : also check for port
-                    if (receiveEndpoint.Address.Equals(_localIP) && !ModuledNetSettings.Settings.AllowLocalConnection)
+                    if (receiveEndpoint.Address.Equals(_localIP) && receiveEndpoint.Port == ModuledNetManager.Port
+                        || receiveEndpoint.Address.Equals(_localIP) && !ModuledNetSettings.Settings.AllowLocalConnection)
                         continue;
 
                     // get packet type without chunked packet bit

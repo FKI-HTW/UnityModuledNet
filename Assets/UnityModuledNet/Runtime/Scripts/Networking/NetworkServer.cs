@@ -56,12 +56,9 @@ namespace CENTIS.UnityModuledNet.Networking
 
         #region lifecycle
 
-        public NetworkServer(string serverName)
-        {
-            ServerName = serverName;
-        }
+        public NetworkServer() { }
 
-        public void StartServer(Action<bool> onConnectionEstablished)
+        public void StartServer(IPAddress localIP, int localPort, string servername, Action<bool> onConnectionEstablished)
         { 
             try
             {
@@ -72,14 +69,14 @@ namespace CENTIS.UnityModuledNet.Networking
                     return;
                 }
 
-                if (ServerName.Length > 100 || ModuledNetSettings.Settings.Username.Length > 100)
+                if (servername.Length > 100 || ModuledNetSettings.Settings.Username.Length > 100)
                 {
                     Debug.LogError($"The Servername and UserName must be shorter than 100 Characters!");
                     onConnectionEstablished?.Invoke(false);
                     return;
                 }
 
-                if (!IsASCIIString(ServerName) || !IsASCIIString(ModuledNetSettings.Settings.Username))
+                if (!IsASCIIString(servername) || !IsASCIIString(ModuledNetSettings.Settings.Username))
                 {
                     Debug.LogError($"The Servername and UserName must be ASCII Strings!");
                     onConnectionEstablished?.Invoke(false);
@@ -87,10 +84,10 @@ namespace CENTIS.UnityModuledNet.Networking
                 }
 
                 EConnectionStatus = EConnectionStatus.IsConnecting;
+                
+                ServerName = servername;
 
-                IPAddress localAddress = IPAddress.Parse(ModuledNetManager.LocalIP);
-                int localPort = FindNextAvailablePort();
-                _localEndpoint = new(localAddress, localPort);
+                _localEndpoint = new(localIP, localPort);
                 _udpClient = new();
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, false);
                 _udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -126,7 +123,7 @@ namespace CENTIS.UnityModuledNet.Networking
                         Debug.LogError("The Given Port is outside the possible Range!");
                         break;
                     case ArgumentNullException:
-                        Debug.LogError("The local IP can't be null!");
+                        Debug.LogError(ex.Message);
                         break;
                     case FormatException:
                         Debug.LogError("The local IP is not a valid IP Address!");

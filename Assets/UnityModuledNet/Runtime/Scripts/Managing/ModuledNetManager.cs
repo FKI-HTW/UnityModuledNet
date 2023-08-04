@@ -38,6 +38,9 @@ namespace CENTIS.UnityModuledNet.Managing
 
         public static IPAddress IP => IPAddress.Parse(LocalIP);
 
+        private static int _port;
+        public static int Port => _port;
+
         public static event Action OnAwake;
         public static event Action OnStart;
         public static event Action OnUpdate;
@@ -292,10 +295,10 @@ namespace CENTIS.UnityModuledNet.Managing
                     var serverInformation = ServerInformationBeforeRecompile;
                     if (serverInformation is null) return;
 
-                    if (serverInformation.IP.ToString().Equals(LocalIP))
+                    if (serverInformation.Endpoint.Equals(new IPEndPoint(IP, Port)))
                         CreateServer(ServerInformationBeforeRecompile.Servername);
                     else
-                        ConnectToServer(ServerInformationBeforeRecompile.IP);
+                        ConnectToServer(ServerInformationBeforeRecompile.Endpoint.Address, ServerInformationBeforeRecompile.Endpoint.Port);
                 });
             };
 #else
@@ -498,7 +501,7 @@ namespace CENTIS.UnityModuledNet.Managing
         /// </summary>
         /// <param name="serverIP">IP of the Server.</param>
         /// <param name="onConnectionEstablished">Invoked once the connection was successfully established or failed to.</param>
-        public static void ConnectToServer(IPAddress serverIP, Action<bool> onConnectionEstablished = null)
+        public static void ConnectToServer(IPAddress serverIP, int serverPort, Action<bool> onConnectionEstablished = null)
         {
             if (EConnectionStatus != EConnectionStatus.IsDisconnected)
             {
@@ -507,12 +510,11 @@ namespace CENTIS.UnityModuledNet.Managing
                 return;
             }
 
-            var networkClient = new NetworkClient(serverIP); // ToDo: Handle this in a way that the networkCLient can be reused to connect to a different server ip
-            // 1. Make sure there is a valid network client
-            // 2. Close other connections. Own server or existing connection.
-            // 3. Connect to wanted ip
+            _port = FindNextAvailablePort();
+
+            NetworkClient networkClient = new();
             Socket = networkClient;
-            networkClient.Connect(onConnectionEstablished);
+            networkClient.Connect(IP, _port, serverIP, serverPort, onConnectionEstablished);
         }
 
         /// <summary>
@@ -529,9 +531,11 @@ namespace CENTIS.UnityModuledNet.Managing
                 return;
             }
 
-            var networkServer = new NetworkServer(servername);
+            _port = FindNextAvailablePort();
+
+            NetworkServer networkServer = new();
             Socket = networkServer;
-            networkServer.StartServer(onConnectionEstablished);
+            networkServer.StartServer(IP, _port, servername, onConnectionEstablished);
         }
 
         /// <summary>
@@ -560,6 +564,15 @@ namespace CENTIS.UnityModuledNet.Managing
         #endregion
 
         #region helper methods
+
+        private static int FindNextAvailablePort()
+        {
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+            {
+                socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                return ((IPEndPoint)socket.LocalEndPoint).Port;
+            }
+        }
 
         private static bool IsEligibleForSending(Action<bool> onDataSend)
         {

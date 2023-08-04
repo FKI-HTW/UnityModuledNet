@@ -65,7 +65,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
         public NetworkClient() { }
 
-        public void Connect(IPAddress serverIP, int serverPort, Action<bool> onConnectionEstablished)
+        public void Connect(IPAddress localIP, int localPort, IPAddress serverIP, int serverPort, Action<bool> onConnectionEstablished)
         { 
             try
             {
@@ -95,11 +95,8 @@ namespace CENTIS.UnityModuledNet.Networking
 
                 EConnectionStatus = EConnectionStatus.IsConnecting;
 
+                _localEndpoint = new(localIP, localPort);
                 _serverEndpoint = new(serverIP, serverPort);
-
-                IPAddress localAddress = IPAddress.Parse(ModuledNetManager.LocalIP);
-                int localPort = FindNextAvailablePort();
-                _localEndpoint = new(localAddress, localPort);
                 _udpClient = new(_localEndpoint);
                 _udpClient.Connect(_serverEndpoint);
 
