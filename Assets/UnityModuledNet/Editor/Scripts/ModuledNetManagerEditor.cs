@@ -59,14 +59,14 @@ namespace CENTIS.UnityModuledNet
 		{
             ModuledNetManager.OnSyncMessageAdded += AddSyncMessage;
             ModuledNetManager.OnConnectedClientListChanged += Repaint;
-            ModuledNetManager.OnServerListChanged += Repaint;
+            ModuledNetManager.OnOpenServerListUpdated += Repaint;
         }
 
         private void OnDisable()
         {
             ModuledNetManager.OnSyncMessageAdded -= AddSyncMessage;
             ModuledNetManager.OnConnectedClientListChanged -= Repaint;
-            ModuledNetManager.OnServerListChanged -= Repaint; 
+            ModuledNetManager.OnOpenServerListUpdated -= Repaint; 
         }
 
         // TODO : add descriptions to labels, was too lazy
@@ -108,7 +108,7 @@ namespace CENTIS.UnityModuledNet
                     GUILayout.Label($"Server Discovery is inactive!");
                     if (GUILayout.Button(new GUIContent("Restart Server Discovery"), GUILayout.ExpandWidth(false)))
 					{
-                        ModuledNetManager.ResetServerDiscovery();
+                        ModuledNetManager.RestartServerDiscovery();
                         Repaint();
 					}
 				}

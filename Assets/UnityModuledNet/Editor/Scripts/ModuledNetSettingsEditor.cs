@@ -43,8 +43,13 @@ namespace CENTIS.UnityModuledNet
                 EditorGUI.indentLevel++;
                 settings.MulticastAddress = EditorGUILayout.TextField(new GUIContent("Multicast Address:", "The Multicast Address used for the Server Discovery"), settings.MulticastAddress);
                 settings.DiscoveryPort = EditorGUILayout.IntField("Server Discovery Port:", settings.DiscoveryPort);
-                if (GUILayout.Button("Reset Server Discovery"))
-                    ModuledNetManager.ResetServerDiscovery();
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Space(15);
+                if (GUILayout.Button("Start Server Discovery"))
+                    ModuledNetManager.StartServerDiscovery();
+                if (GUILayout.Button("End Server Discovery"))
+                    ModuledNetManager.EndServerDiscovery();
+                EditorGUILayout.EndHorizontal();
                 EditorGUI.indentLevel--;
             }
 

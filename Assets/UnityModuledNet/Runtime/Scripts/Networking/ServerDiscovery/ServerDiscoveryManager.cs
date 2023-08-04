@@ -22,7 +22,7 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
 
         public Action OnServerDiscoveryActivated;
         public Action OnServerDiscoveryDeactivated;
-        public Action OnOpenServerListChanged;
+        public Action OnOpenServerListUpdated;
 
 		#endregion
 
@@ -159,7 +159,7 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
                     // add new values or update server with new values
                     _openServers.AddOrUpdate(receiveEndpoint, newServer, (key, value) => value = newServer);
 
-                    ModuledNetManager.QueueOnUpdate(() => OnOpenServerListChanged?.Invoke());
+                    ModuledNetManager.QueueOnUpdate(() => OnOpenServerListUpdated?.Invoke());
                 }
                 catch (Exception ex)
                 {
@@ -188,7 +188,7 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
                 if ((DateTime.Now - server.LastHeartbeat).TotalMilliseconds > ModuledNetSettings.Settings.ServerDiscoveryTimeout)
                 {
                     _openServers.TryRemove(serverEndpoint, out _);
-                    ModuledNetManager.QueueOnUpdate(() => OnOpenServerListChanged?.Invoke());
+                    ModuledNetManager.QueueOnUpdate(() => OnOpenServerListUpdated?.Invoke());
                     return;
                 }
 

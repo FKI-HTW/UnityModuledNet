@@ -5,12 +5,8 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Runtime.ExceptionServices;
 using UnityEngine;
 using CENTIS.UnityModuledNet.Networking;
-using CENTIS.UnityModuledNet.Networking.Packets;
 using CENTIS.UnityModuledNet.Networking.ServerDiscovery;
 using CENTIS.UnityModuledNet.Modules;
 using CENTIS.UnityModuledNet.Serialiser;
@@ -21,7 +17,7 @@ using UnityEditor;
 
 namespace CENTIS.UnityModuledNet.Managing
 {
-    public static class ModuledNetManager
+	public static class ModuledNetManager
     {
         #region public properties
 
@@ -91,7 +87,7 @@ namespace CENTIS.UnityModuledNet.Managing
         /// <summary>
         /// Action for when a Server was added or removed from the OpenServers.
         /// </summary>
-        public static event Action OnOpenServerListChanged;
+        public static event Action OnOpenServerListUpdated;
 
         /// <summary>
         /// Current Status of the Connection to the Server.
@@ -114,7 +110,7 @@ namespace CENTIS.UnityModuledNet.Managing
         /// </summary>
         public static bool IsServerDiscoveryActive
         {
-            get => _serverDiscoveryManager != null && _serverDiscoveryManager.IsServerDiscoveryActive;
+            get => ServerDiscoveryManager != null && ServerDiscoveryManager.IsServerDiscoveryActive;
         }
 
         /// <summary>
@@ -122,7 +118,7 @@ namespace CENTIS.UnityModuledNet.Managing
         /// </summary>
         public static List<OpenServer> OpenServers
         {
-            get => _serverDiscoveryManager?.OpenServers;
+            get => ServerDiscoveryManager?.OpenServers;
         }
 
         /// <summary>
@@ -179,7 +175,29 @@ namespace CENTIS.UnityModuledNet.Managing
 
         private readonly static ConcurrentQueue<Action> _mainThreadDispatchQueue = new();
 
-        private static ServerDiscoveryManager _serverDiscoveryManager = new();
+        private static ServerDiscoveryManager _serverDiscoveryManager;
+        private static ServerDiscoveryManager ServerDiscoveryManager
+		{
+            get => _serverDiscoveryManager;
+            set
+			{
+                if (_serverDiscoveryManager == value) return;
+
+                if (_serverDiscoveryManager != null)
+				{
+                    _serverDiscoveryManager.OnServerDiscoveryActivated -= FireServerDiscoveryActivatedEvent;
+                    _serverDiscoveryManager.OnServerDiscoveryDeactivated -= FireServerDiscoveryDeactivatedEvent;
+                    _serverDiscoveryManager.OnOpenServerListUpdated -= FireOpenServerListUpdatedEvent;
+				}
+                _serverDiscoveryManager = value;
+                if (_serverDiscoveryManager != null)
+				{
+                    _serverDiscoveryManager.OnServerDiscoveryActivated += FireServerDiscoveryActivatedEvent;
+                    _serverDiscoveryManager.OnServerDiscoveryDeactivated += FireServerDiscoveryDeactivatedEvent;
+                    _serverDiscoveryManager.OnOpenServerListUpdated += FireOpenServerListUpdatedEvent;
+                }
+			}
+		}
 
         private static ANetworkSocket _socket;
         private static ANetworkSocket Socket
@@ -288,7 +306,7 @@ namespace CENTIS.UnityModuledNet.Managing
 
             DataReceived += OnDataReceived;
 
-            QueueOnUpdate(() => ResetServerDiscovery());
+            QueueOnUpdate(() => StartServerDiscovery());
         }
 
         public static void Init() { }
@@ -327,6 +345,9 @@ namespace CENTIS.UnityModuledNet.Managing
         private static void FireClientConnectedEvent(byte id) => OnClientConnected?.Invoke(id);
         private static void FireClientDisconnectedEvent(byte id) => OnClientDisconnected?.Invoke(id);
         private static void FireConnectedClientListChangedEvent() => OnConnectedClientListChanged?.Invoke();
+        private static void FireServerDiscoveryActivatedEvent() => OnServerDiscoveryActivated?.Invoke();
+        private static void FireServerDiscoveryDeactivatedEvent() => OnServerDiscoveryDeactivated?.Invoke();
+        private static void FireOpenServerListUpdatedEvent() => OnOpenServerListUpdated?.Invoke();
 
         private static string GetLocalIPAddress(int index = 0, bool checkForGatewayAddress = true)
         {
@@ -445,14 +466,9 @@ namespace CENTIS.UnityModuledNet.Managing
         /// <returns><see langword="true"> if the Server Discovery is already active or was successfully started</returns>
         public static bool StartServerDiscovery()
 		{
-            if (_serverDiscoveryManager == null)
-			{
-                _serverDiscoveryManager = new();
-                _serverDiscoveryManager.OnServerDiscoveryActivated += () => OnServerDiscoveryActivated?.Invoke();
-                _serverDiscoveryManager.OnServerDiscoveryDeactivated += () => OnServerDiscoveryDeactivated?.Invoke();
-                _serverDiscoveryManager.OnOpenServerListChanged += () => OnOpenServerListChanged?.Invoke();
-            }
-            return _serverDiscoveryManager.StartServerDiscovery();
+            if (ServerDiscoveryManager == null)
+                ServerDiscoveryManager = new();
+            return ServerDiscoveryManager.StartServerDiscovery();
 
         }
 
@@ -461,20 +477,20 @@ namespace CENTIS.UnityModuledNet.Managing
         /// </summary>
         public static void EndServerDiscovery()
 		{
-            if (_serverDiscoveryManager != null)
-                _serverDiscoveryManager.EndServerDiscovery();
+            if (ServerDiscoveryManager != null)
+                ServerDiscoveryManager.EndServerDiscovery();
         }
 
         /// <summary>
         /// Resets the Server Discovery. Use this when Exceptions ocurred or the Service Discovery was closed.
         /// </summary>
         /// <returns><see langword="true"/> if the Server Discovery is Active after the Reset</returns>
-        public static bool ResetServerDiscovery()
+        public static bool RestartServerDiscovery()
         {
-            if (_serverDiscoveryManager == null)
+            if (ServerDiscoveryManager == null)
                 return StartServerDiscovery();
             else
-                return _serverDiscoveryManager.RestartServerDiscovery();
+                return ServerDiscoveryManager.RestartServerDiscovery();
         }
 
         /// <summary>

@@ -43,7 +43,7 @@ namespace CENTIS.UnityModuledNet.Modules
 			ModuledNetManager.OnClientConnected += ClientConnected;
 			ModuledNetManager.OnClientDisconnected += ClientDisconnected;
 			ModuledNetManager.OnConnectedClientListChanged += ConnectedClientListChanged;
-			ModuledNetManager.OnOpenServerListChanged += OpenServerListChanged;
+			ModuledNetManager.OnOpenServerListUpdated += OpenServerListChanged;
 		}
 
 		~ModuledNetModule()
@@ -75,7 +75,7 @@ namespace CENTIS.UnityModuledNet.Modules
 				ModuledNetManager.OnClientConnected -= ClientConnected;
 				ModuledNetManager.OnClientDisconnected -= ClientDisconnected;
 				ModuledNetManager.OnConnectedClientListChanged -= ConnectedClientListChanged;
-				ModuledNetManager.OnOpenServerListChanged -= OpenServerListChanged;
+				ModuledNetManager.OnOpenServerListUpdated -= OpenServerListChanged;
 			}
 
 			UnregisterModule();
