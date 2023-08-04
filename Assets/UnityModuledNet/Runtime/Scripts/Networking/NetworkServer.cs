@@ -116,8 +116,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 switch (ex)
                 {
                     case SocketException:
-                        Debug.LogError("An Error ocurred when accessing the socket. "
-                            + "Make sure the port is not occupied by another process!");
+                        Debug.LogError("An Error ocurred when accessing the socket. Make sure the port is not occupied by another process!");
                         break;
                     case ArgumentOutOfRangeException:
                         Debug.LogError("The Given Port is outside the possible Range!");

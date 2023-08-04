@@ -46,13 +46,13 @@ namespace CENTIS.UnityModuledNet
         public bool ReconnectAfterRecompile { get => reconnectAfterRecompile; set => reconnectAfterRecompile = value; }
 
         // server settings
-        [SerializeField] private byte _maxNumberClients = 253;
+        [SerializeField] private byte _maxNumberClients = 254;
         public byte MaxNumberClients
         {
             get => _maxNumberClients;
             set
             {
-                if (value < 254 && value > 1 && _maxNumberClients != value)
+                if (value < byte.MaxValue && value > 1 && _maxNumberClients != value)
                     _maxNumberClients = value;
             }
         }
