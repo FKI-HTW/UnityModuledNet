@@ -104,6 +104,7 @@ namespace CENTIS.UnityModuledNet.Networking.ServerDiscovery
 
             if (_udpClient != null)
             {
+                _udpClient.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.DropMembership, new MulticastOption(_multicastIP, _localIP));
                 _udpClient.Close();
                 _udpClient.Dispose();
             }

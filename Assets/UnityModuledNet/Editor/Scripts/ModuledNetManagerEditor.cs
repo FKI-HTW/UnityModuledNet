@@ -2,6 +2,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using CENTIS.UnityModuledNet.Networking;
+using CENTIS.UnityModuledNet.Networking.ServerDiscovery;
 using CENTIS.UnityModuledNet.Managing;
 
 namespace CENTIS.UnityModuledNet
@@ -131,13 +132,13 @@ namespace CENTIS.UnityModuledNet
 
                         for (int i = 0; i < ModuledNetManager.OpenServers?.Count; i++)
                         {
-                            OpenServerInformation server = ModuledNetManager.OpenServers[i];
+                            OpenServer server = ModuledNetManager.OpenServers[i];
                             EditorGUILayout.BeginHorizontal(GetScrollviewRowStyle(_scrollViewColors[i % 2]));
                             {
                                 GUILayout.Label(server.Servername);
                                 GUILayout.Label($"#{server.NumberConnectedClients}/{server.MaxNumberConnectedClients}");
                                 if (GUILayout.Button(new GUIContent("Connect To Server"), GUILayout.ExpandWidth(false)))
-                                    ModuledNetManager.ConnectToServer(server.IP);
+                                    ModuledNetManager.ConnectToServer(server.Endpoint.Address, server.Endpoint.Port);
                             }
                             EditorGUILayout.EndHorizontal();
                         }
@@ -179,7 +180,7 @@ namespace CENTIS.UnityModuledNet
                                 EditorGUILayout.BeginHorizontal(GetScrollviewRowStyle(_scrollViewColors[i % 2]));
                                 {
                                     _style.normal.textColor = client.Color;
-                                    GUILayout.Label(client.ToString(), _style);
+                                    GUILayout.Label($"#{client.ID} {client.Username}", _style);
                                 }
                                 EditorGUILayout.EndHorizontal();
                             }

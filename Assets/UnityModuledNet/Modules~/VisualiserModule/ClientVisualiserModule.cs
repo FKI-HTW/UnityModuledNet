@@ -107,7 +107,7 @@ namespace CENTIS.UnityModuledNet.Modules
             if (!ModuledNetManager.ConnectedClients.TryGetValue(sender, out ClientInformation client))
                 return;
 
-            if (false)
+            if (ModuledNetSettings.Settings.Debug)
                 Debug.Log($"Received Camera Update from {client}");
 
             int size = sizeof(float);
