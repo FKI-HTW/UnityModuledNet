@@ -70,9 +70,9 @@ namespace CENTIS.UnityModuledNet.Networking
         { 
             try
             {
-                if (!CheckLocalIP(ModuledNetManager.LocalIP))
+                if (!CheckLocalIP(ModuledNetManager.LocalIP, !ModuledNetSettings.Settings.AllowVirtualIPs))
                 {
-                    Debug.LogError("No network interface possesses the given local IP!");
+                    Debug.LogError($"No network interface possesses the given local IP: {ModuledNetManager.LocalIP}!");
                     onConnectionEstablished?.Invoke(false);
                     return;
                 }

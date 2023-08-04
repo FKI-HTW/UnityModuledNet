@@ -162,7 +162,7 @@ namespace CENTIS.UnityModuledNet
                 else
                 {
                     // connected clients list
-                    GUILayout.Label($"Current Server: {ModuledNetManager.CurrentServer?.Servername}");
+                    GUILayout.Label($"Current Server ({ModuledNetManager.LocalIP}): {ModuledNetManager.CurrentServer?.Servername}");
                     _clientsViewPos = EditorGUILayout.BeginScrollView(_clientsViewPos, EditorStyles.helpBox, GUILayout.ExpandWidth(true), GUILayout.MaxHeight(150));
                     {
                         if (ModuledNetManager.ConnectedClients.Count == 0)

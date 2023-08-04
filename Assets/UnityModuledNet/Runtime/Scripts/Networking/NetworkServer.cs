@@ -60,12 +60,12 @@ namespace CENTIS.UnityModuledNet.Networking
         }
 
         public void StartServer(Action<bool> onConnectionEstablished)
-        { 
+        {
             try
             {
-                if (!CheckLocalIP(ModuledNetManager.LocalIP))
+                if (!CheckLocalIP(ModuledNetManager.LocalIP, !ModuledNetSettings.Settings.AllowVirtualIPs))
                 {
-                    Debug.LogError("No network interface possesses the given local IP!");
+                    Debug.LogError($"No network interface possesses the given local IP: {ModuledNetManager.LocalIP}!");
                     onConnectionEstablished?.Invoke(false);
                     return;
                 }
@@ -577,6 +577,10 @@ namespace CENTIS.UnityModuledNet.Networking
                 {
                     case ThreadAbortException:
                         return;
+                    case SocketException:
+                        Debug.LogError($"Socket Exception! IP: '{ModuledNetManager.LocalIP}' might not be valid or can't be used!");
+                        ExceptionDispatchInfo.Capture(ex).Throw(); 
+                        break;
                     default:
                         _mainThreadActions.Enqueue(() => Dispose());
                         ExceptionDispatchInfo.Capture(ex).Throw();

@@ -79,7 +79,15 @@ namespace CENTIS.UnityModuledNet
 
         public bool Debug { get => debug; set => debug = value; }
         public int IPAddressIndex { get => ipAddressIndex; set => ipAddressIndex = value; }
-        public bool AllowVirtualIPs { get => allowVirtualIPs; set => allowVirtualIPs = value; }
+        public bool AllowVirtualIPs
+        {
+            get => allowVirtualIPs; set
+            {
+                if (allowVirtualIPs != value)
+                    ModuledNetManager.SetIPAddressDirty();
+                allowVirtualIPs = value;
+            }
+        }
         public int Port
         {
             get => port;

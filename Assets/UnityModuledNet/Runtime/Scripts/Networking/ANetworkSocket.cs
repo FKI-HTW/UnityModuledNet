@@ -117,7 +117,7 @@ namespace CENTIS.UnityModuledNet.Networking
 
         #region helper methods
 
-        protected static bool CheckLocalIP(string localIp)
+        protected static bool CheckLocalIP(string localIp, bool checkForGatewayAddress = true)
         {
             foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
             {
@@ -125,7 +125,7 @@ namespace CENTIS.UnityModuledNet.Networking
                 {   // Fetch the properties of this adapter
                     IPInterfaceProperties adapterProperties = item.GetIPProperties();
                     // Check if the gateway adress exist, if not its most likley a virtual network or smth
-                    if (adapterProperties.GatewayAddresses.FirstOrDefault() != null)
+                    if (checkForGatewayAddress == false || adapterProperties.GatewayAddresses.FirstOrDefault() != null)
                     {   // Iterate over each available unicast adresses
                         foreach (UnicastIPAddressInformation ip in adapterProperties.UnicastAddresses)
                         {   // If the IP is a local IPv4 adress

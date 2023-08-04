@@ -11,7 +11,7 @@ namespace CENTIS.UnityModuledNet
         private bool _packetSettingsIsVisible = false;
         private bool _debugSettingsIsVisible = false;
 
-        private string[] cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(true).ToArray();
+        private string[] cachedIpAddresses = null;
 
         // TODO : add descriptions to labels, was too lazy
         public override void OnInspectorGUI()
@@ -43,14 +43,28 @@ namespace CENTIS.UnityModuledNet
                 EditorGUI.indentLevel++;
                 settings.Debug = EditorGUILayout.Toggle(new GUIContent("Debug", "Allows the display of debug messages."), settings.Debug);
 
+                // UI for IP address
                 EditorGUILayout.BeginHorizontal();
+                System.Action updateCachedIpAddresses = () => cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
+                if (cachedIpAddresses == null)
+                    updateCachedIpAddresses();
                 settings.IPAddressIndex = EditorGUILayout.Popup("IP Address", settings.IPAddressIndex, cachedIpAddresses);
                 if (GUILayout.Button("Update IP Addresses"))
-                    cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
+                    updateCachedIpAddresses();
                 var cachedAllowVirtualIPs = settings.AllowVirtualIPs;
                 settings.AllowVirtualIPs = EditorGUILayout.Toggle("Virtual IPs ", settings.AllowVirtualIPs);
                 if (cachedAllowVirtualIPs != settings.AllowVirtualIPs)
-                    cachedIpAddresses = ModuledNetManager.GetLocalIPAddresses(!settings.AllowVirtualIPs).ToArray();
+                {
+                    var cachedIPAddress = cachedIpAddresses[settings.IPAddressIndex];
+                    updateCachedIpAddresses();
+                    settings.IPAddressIndex = 0;
+                    for (int i = 0; i < cachedIpAddresses.Length; i++)
+                        if (cachedIpAddresses[i].Equals(cachedIPAddress))
+                        {
+                            settings.IPAddressIndex = i;
+                            break;
+                        }
+                }
                 settings.IPAddressIndex = Mathf.Clamp(settings.IPAddressIndex, 0, cachedIpAddresses.Length - 1);
                 EditorGUILayout.EndHorizontal();
 
